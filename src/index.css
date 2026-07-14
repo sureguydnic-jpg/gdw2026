@@ -1,0 +1,197 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
+:root {
+  /* Premium Dark Green & Mint Color Palette */
+  --bg-primary: #0a0f0d;
+  --bg-secondary: #111815;
+  --bg-tertiary: #19221e;
+  --border: #22302a;
+  --border-focus: #10b981;
+  
+  --accent: #10b981;
+  --accent-rgb: 16, 185, 129;
+  --accent-hover: #059669;
+  --accent-light: rgba(16, 185, 129, 0.1);
+  
+  --mint: #34d399;
+  --mint-light: rgba(52, 211, 153, 0.15);
+  
+  --text-primary: #f3f4f6;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+
+  /* Dynamic Page Size Settings (Customizable via settings panel) */
+  --page-width: 80mm;
+  --page-height: 50mm;
+  
+  /* Status Colors */
+  --vip-color: #fbbf24;
+  --vip-bg: rgba(251, 191, 36, 0.1);
+  --speaker-color: #a78bfa;
+  --speaker-bg: rgba(167, 139, 250, 0.1);
+  --staff-color: #f87171;
+  --staff-bg: rgba(248, 113, 113, 0.1);
+  --general-color: #60a5fa;
+  --general-bg: rgba(96, 165, 250, 0.1);
+  --press-color: #2dd4bf;
+  --press-bg: rgba(45, 212, 191, 0.1);
+
+  --font-title: 'Outfit', 'Noto Sans KR', sans-serif;
+  --font-body: 'Inter', 'Noto Sans KR', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* Utility Classes */
+.glass {
+  background: rgba(17, 24, 21, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.glow {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+}
+
+/* Tab Layout & Common Structure */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  font-family: var(--font-body);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+input, select, textarea {
+  font-family: var(--font-body);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input:focus, select:focus {
+  border-color: var(--border-focus);
+}
+
+/* Animation Utilities */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ==========================================
+   PRINT MEDIA STYLES - 80mm x 50mm Label
+   ========================================== */
+#print-area {
+  display: none;
+}
+
+@media print {
+  /* Hiding normal UI elements instead of #root container */
+  header, 
+  nav, 
+  main, 
+  footer,
+  .navigationContainer {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+  
+  /* Show only the designated print area at exact physical coordinates */
+  #print-area {
+    display: block !important;
+    visibility: visible !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: var(--page-width) !important;
+    height: var(--page-height) !important;
+    max-height: var(--page-height) !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    page-break-inside: avoid !important;
+    page-break-after: avoid !important;
+    z-index: 99999 !important;
+  }
+
+  #print-area * {
+    visibility: visible !important;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: var(--page-width) !important;
+    height: var(--page-height) !important;
+    max-height: var(--page-height) !important;
+    overflow: hidden !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  @page {
+    size: var(--page-width) var(--page-height);
+    margin: 0 !important;
+  }
+}
