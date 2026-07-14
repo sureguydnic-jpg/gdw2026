@@ -373,6 +373,15 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     fetchAllData();
 
+    // [최적화] 모바일 셀프 등록/티켓 조회 화면(?view=public-register) 접속 시 실시간 웹소켓 구독을 생략합니다.
+    const isPublicView = window.location.search.includes('view=public-register');
+    if (isPublicView) {
+      console.log('모바일 셀프 등록 화면 접속: Supabase Realtime 웹소켓 구독을 생략합니다.');
+      return;
+    }
+
+    console.log('관리자/데스크 화면 접속: Supabase Realtime 웹소켓 구독을 시작합니다.');
+
     const channelSubscription = supabase
       .channel('schema-db-changes')
       .on(
