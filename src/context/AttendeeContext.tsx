@@ -266,7 +266,7 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (isPublicView) {
         if (codeParam) {
           // [초특급 최적화 1] 일반 모바일 티켓 조회 화면에서는 전체 목록을 가져오지 않고, 오직 해당 티켓 코드의 정보만 단건 조회합니다!
-          const { data, error } = await supabase
+          let { data, error } = await supabase
             .from('attendees')
             .select('*')
             .eq('code', codeParam)
@@ -278,7 +278,35 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           } else if (data) {
             setAttendees([mapDbToAttendee(data)]);
           } else {
-            setAttendees([]);
+            // 조회가 되지 않는 경우, DB가 비어있는 상태인지 확인 후 자동 Seeding을 진행합니다.
+            const { count, error: countError } = await supabase
+              .from('attendees')
+              .select('*', { count: 'exact', head: true });
+            
+            if (!countError && count === 0) {
+              console.log('Supabase가 비어 있어 모바일 접속 시점에 초기 데이터를 주입(seeding)합니다.');
+              const dbAttendees = INITIAL_ATTENDEES.map(mapAttendeeToDb);
+              const { error: seedError } = await supabase
+                .from('attendees')
+                .insert(dbAttendees);
+              
+              if (!seedError) {
+                const { data: freshData } = await supabase
+                  .from('attendees')
+                  .select('*')
+                  .eq('code', codeParam)
+                  .maybeSingle();
+                if (freshData) {
+                  setAttendees([mapDbToAttendee(freshData)]);
+                } else {
+                  setAttendees([]);
+                }
+              } else {
+                setAttendees([]);
+              }
+            } else {
+              setAttendees([]);
+            }
           }
         } else {
           // [초특급 최적화 2] 모바일 등록 폼 화면에서는 전체 목록을 가져올 필요가 없으므로,
