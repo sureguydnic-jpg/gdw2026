@@ -361,24 +361,28 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setPrintLogs([]);
       } else {
         // 관리자/데스크 화면에서는 기존처럼 전체 데이터를 수집
-        const { data: attData, error: attError } = await withTimeout(
-          supabase
-            .from('attendees')
-            .select('*')
-            .order('created_at', { ascending: false }),
-          5000
-        );
+        // [병렬 최적화] 두 테이블 조회를 동시에 처리하여 로딩 속도를 향상시킵니다.
+        const [attResult, logResult] = await Promise.all([
+          withTimeout(
+            supabase
+              .from('attendees')
+              .select('*')
+              .order('created_at', { ascending: false }),
+            5000
+          ),
+          withTimeout(
+            supabase
+              .from('print_logs')
+              .select('*')
+              .order('printed_at', { ascending: false }),
+            5000
+          )
+        ]);
+
+        const { data: attData, error: attError } = attResult;
+        const { data: logData, error: logError } = logResult;
 
         if (attError) throw attError;
-
-        const { data: logData, error: logError } = await withTimeout(
-          supabase
-            .from('print_logs')
-            .select('*')
-            .order('printed_at', { ascending: false }),
-          5000
-        );
-
         if (logError) throw logError;
 
         const mappedAttendees = (attData || []).map(mapDbToAttendee);
