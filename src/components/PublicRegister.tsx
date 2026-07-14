@@ -54,6 +54,11 @@ export const PublicRegister: React.FC = () => {
       return;
     }
 
+    // 본 행사 시작일 (2026-08-26 KST) 기준 이전이면 '사전', 당일부터는 '현장'으로 구분
+    const eventStartDate = new Date('2026-08-26T00:00:00+09:00');
+    const now = new Date();
+    const regType = now < eventStartDate ? '사전' : '현장';
+
     const created = addAttendee({
       name: name.trim(),
       organization: organization.trim(),
@@ -62,7 +67,7 @@ export const PublicRegister: React.FC = () => {
       email: email.trim(),
       type: '일반',
       privacyAgree: true,
-      registeredType: '현장'
+      registeredType: regType
     });
 
     setRegisteredAttendee(created);
@@ -221,7 +226,9 @@ export const PublicRegister: React.FC = () => {
           <div className="animate-fade-in" style={successWrapper}>
             <div style={successHeader}>
               <CheckCircle size={48} style={{ color: 'var(--accent)', marginBottom: '0.5rem' }} />
-              <h2 style={successTitle}>현장 등록 완료!</h2>
+              <h2 style={successTitle}>
+                {registeredAttendee?.registeredType === '사전' ? '사전 등록 확인' : '현장 등록 완료!'}
+              </h2>
               <p style={successDesc}>입장용 모바일 QR 티켓이 정상적으로 발급되었습니다.</p>
             </div>
 
@@ -233,7 +240,14 @@ export const PublicRegister: React.FC = () => {
                 </div>
 
                 <div style={ticketBody}>
-                  <span style={badgeStyle}>현장등록</span>
+                  <span style={{
+                    ...badgeStyle,
+                    color: registeredAttendee.registeredType === '사전' ? '#fbbf24' : '#10b981',
+                    backgroundColor: registeredAttendee.registeredType === '사전' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                    borderColor: registeredAttendee.registeredType === '사전' ? 'rgba(251, 191, 36, 0.2)' : 'rgba(16, 185, 129, 0.2)'
+                  }}>
+                    {registeredAttendee.registeredType === '사전' ? '사전등록' : '현장등록'}
+                  </span>
                   
                   <div style={qrBoxStyle}>
                     <img 
