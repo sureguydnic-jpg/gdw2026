@@ -4,7 +4,7 @@ import type { Attendee } from '../types';
 import { Sparkles, CheckCircle, Shield, Phone, Mail, Award, ArrowLeft, Loader2 } from 'lucide-react';
 
 export const PublicRegister: React.FC = () => {
-  const { addAttendee, attendees, isLoading } = useAttendees();
+  const { addAttendee, attendees, isLoading, dbError } = useAttendees();
   
   const [name, setName] = useState('');
   const [organization, setOrganization] = useState('');
@@ -83,6 +83,11 @@ export const PublicRegister: React.FC = () => {
     setPrivacyAgree(false);
     setStep('form');
     setRegisteredAttendee(null);
+
+    // URL에서 code 파라미터 제거하여 등록 폼으로 복귀
+    const url = new URL(window.location.href);
+    url.searchParams.delete('code');
+    window.history.replaceState({}, '', url.toString());
   };
 
   const searchParams = new URLSearchParams(window.location.search);
@@ -95,6 +100,53 @@ export const PublicRegister: React.FC = () => {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 0', gap: '1rem' }}>
             <Loader2 size={36} className="animate-spin" style={{ color: 'var(--accent)' }} />
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontFamily: 'var(--font-body)' }}>티켓 정보를 불러오는 중입니다...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isLoading && hasCode && !registeredAttendee) {
+    return (
+      <div style={viewportStyle}>
+        <div className="glass glow" style={containerStyle}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '2.5rem 1rem', gap: '1.2rem' }}>
+            <Shield size={48} style={{ color: '#ef4444' }} />
+            <h2 style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-primary)' }}>
+              입장권을 불러올 수 없습니다
+            </h2>
+            
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.5', backgroundColor: 'rgba(239, 68, 68, 0.05)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.15)', width: '100%' }}>
+              {dbError ? (
+                <>
+                  <p style={{ fontWeight: '700', marginBottom: '0.4rem', color: '#f87171' }}>데이터베이스 연결 실패</p>
+                  <p>{dbError}</p>
+                  <p style={{ marginTop: '0.4rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>네트워크가 불안정하거나 서버 상태를 확인해 주세요.</p>
+                </>
+              ) : (
+                <>
+                  <p style={{ fontWeight: '700', marginBottom: '0.4rem', color: '#f87171' }}>등록 내역 찾을 수 없음</p>
+                  <p>전달받은 등록코드 (<span style={{ fontFamily: 'monospace', fontWeight: '700' }}>{searchParams.get('code')}</span>) 에 해당하는 사전등록 내역이 존재하지 않습니다.</p>
+                  <p style={{ marginTop: '0.4rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>코드가 정확한지 확인하시거나, 현장에서 신규 등록을 진행해 주세요.</p>
+                </>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%', marginTop: '0.5rem' }}>
+              <button 
+                onClick={() => window.location.reload()} 
+                style={{ ...btnSubmitStyle, marginTop: 0 }}
+              >
+                다시 시도 (새로고침)
+              </button>
+              
+              <button 
+                onClick={handleResetForm} 
+                style={{ ...btnBackStyle, width: '100%', padding: '0.8rem', fontSize: '0.85rem' }}
+              >
+                현장 즉석 등록으로 진행하기
+              </button>
+            </div>
           </div>
         </div>
       </div>

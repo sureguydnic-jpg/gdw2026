@@ -7,6 +7,7 @@ interface AttendeeContextType {
   attendees: Attendee[];
   printLogs: PrintLog[];
   isLoading: boolean;
+  dbError: string | null;
   deskId: string;
   setDeskId: (id: string) => void;
   isLoggedIn: boolean;
@@ -210,6 +211,7 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [printLogs, setPrintLogs] = useState<PrintLog[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [dbError, setDbError] = useState<string | null>(null);
   const [deskId, setDeskIdState] = useState<string>('Desk-01');
   const [settings, setSettingsState] = useState<PrintSettings>({ pageWidth: 80, pageHeight: 50 });
   
@@ -255,9 +257,20 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setIsLoading(false);
   };
 
+  // Helper to wrap promise with timeout
+  const withTimeout = async (promise: Promise<any>, timeoutMs: number = 4000): Promise<any> => {
+    return Promise.race([
+      promise,
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('TIMEOUT')), timeoutMs)
+      ),
+    ]);
+  };
+
   // Fetch all data from Supabase
   const fetchAllData = async () => {
     setIsLoading(true);
+    setDbError(null);
     try {
       const isPublicView = window.location.search.includes('view=public-register');
       const searchParams = new URLSearchParams(window.location.search);
@@ -266,56 +279,75 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (isPublicView) {
         if (codeParam) {
           // [초특급 최적화 1] 일반 모바일 티켓 조회 화면에서는 전체 목록을 가져오지 않고, 오직 해당 티켓 코드의 정보만 단건 조회합니다!
-          let { data, error } = await supabase
-            .from('attendees')
-            .select('*')
-            .eq('code', codeParam)
-            .maybeSingle();
+          let { data, error } = await withTimeout(
+            supabase
+              .from('attendees')
+              .select('*')
+              .eq('code', codeParam)
+              .maybeSingle(),
+            4000
+          );
 
           if (error) {
             console.warn('모바일 티켓 단건 조회 실패:', error);
             setAttendees([]);
+            setDbError('티켓 조회 중 오류가 발생했습니다.');
           } else if (data) {
             setAttendees([mapDbToAttendee(data)]);
           } else {
             // 조회가 되지 않는 경우, DB가 비어있는 상태인지 확인 후 자동 Seeding을 진행합니다.
-            const { count, error: countError } = await supabase
-              .from('attendees')
-              .select('*', { count: 'exact', head: true });
+            const { count, error: countError } = await withTimeout(
+              supabase
+                .from('attendees')
+                .select('*', { count: 'exact', head: true }),
+              4000
+            );
             
             if (!countError && count === 0) {
               console.log('Supabase가 비어 있어 모바일 접속 시점에 초기 데이터를 주입(seeding)합니다.');
               const dbAttendees = INITIAL_ATTENDEES.map(mapAttendeeToDb);
-              const { error: seedError } = await supabase
-                .from('attendees')
-                .insert(dbAttendees);
+              const { error: seedError } = await withTimeout(
+                supabase
+                  .from('attendees')
+                  .insert(dbAttendees),
+                4000
+              );
               
               if (!seedError) {
-                const { data: freshData } = await supabase
-                  .from('attendees')
-                  .select('*')
-                  .eq('code', codeParam)
-                  .maybeSingle();
+                const { data: freshData } = await withTimeout(
+                  supabase
+                    .from('attendees')
+                    .select('*')
+                    .eq('code', codeParam)
+                    .maybeSingle(),
+                  4000
+                );
                 if (freshData) {
                   setAttendees([mapDbToAttendee(freshData)]);
                 } else {
                   setAttendees([]);
+                  setDbError('등록 정보를 찾을 수 없습니다.');
                 }
               } else {
                 setAttendees([]);
+                setDbError('초기 데이터 주입 실패로 조회할 수 없습니다.');
               }
             } else {
               setAttendees([]);
+              setDbError('등록 정보를 찾을 수 없습니다.');
             }
           }
         } else {
           // [초특급 최적화 2] 모바일 등록 폼 화면에서는 전체 목록을 가져올 필요가 없으므로,
           // 코드 번호 자동 생성을 위해 현재 저장된 가장 큰 코드 정보 1건만 조회합니다.
-          const { data, error } = await supabase
-            .from('attendees')
-            .select('code')
-            .order('code', { ascending: false })
-            .limit(1);
+          const { data, error } = await withTimeout(
+            supabase
+              .from('attendees')
+              .select('code')
+              .order('code', { ascending: false })
+              .limit(1),
+            4000
+          );
 
           if (error) {
             console.warn('모바일 등록 코드 조회 실패:', error);
@@ -329,17 +361,23 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setPrintLogs([]);
       } else {
         // 관리자/데스크 화면에서는 기존처럼 전체 데이터를 수집
-        const { data: attData, error: attError } = await supabase
-          .from('attendees')
-          .select('*')
-          .order('created_at', { ascending: false });
+        const { data: attData, error: attError } = await withTimeout(
+          supabase
+            .from('attendees')
+            .select('*')
+            .order('created_at', { ascending: false }),
+          5000
+        );
 
         if (attError) throw attError;
 
-        const { data: logData, error: logError } = await supabase
-          .from('print_logs')
-          .select('*')
-          .order('printed_at', { ascending: false });
+        const { data: logData, error: logError } = await withTimeout(
+          supabase
+            .from('print_logs')
+            .select('*')
+            .order('printed_at', { ascending: false }),
+          5000
+        );
 
         if (logError) throw logError;
 
@@ -349,17 +387,23 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         if (mappedAttendees.length === 0) {
           console.log('Supabase가 비어 있어 초기 데이터를 주입(seeding)합니다.');
           const dbAttendees = INITIAL_ATTENDEES.map(mapAttendeeToDb);
-          const { error: seedError } = await supabase
-            .from('attendees')
-            .insert(dbAttendees);
+          const { error: seedError } = await withTimeout(
+            supabase
+              .from('attendees')
+              .insert(dbAttendees),
+            5000
+          );
           
           if (seedError) {
             console.error('더미 데이터 주입 실패:', seedError);
           } else {
-            const { data: freshAtt } = await supabase
-              .from('attendees')
-              .select('*')
-              .order('created_at', { ascending: false });
+            const { data: freshAtt } = await withTimeout(
+              supabase
+                .from('attendees')
+                .select('*')
+                .order('created_at', { ascending: false }),
+              5000
+            );
             setAttendees((freshAtt || []).map(mapDbToAttendee));
           }
         } else {
@@ -368,8 +412,13 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
         setPrintLogs(mappedLogs);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Supabase 데이터 로드 실패. 로컬 저장소 모드로 대체합니다:', err);
+      setDbError(
+        err.message === 'TIMEOUT'
+          ? '데이터베이스 연결 시간이 초과되었습니다.'
+          : '데이터베이스 연결에 실패했습니다. (네트워크 상태를 확인해 주세요)'
+      );
       loadFromLocalStorageFallback();
     } finally {
       setIsLoading(false);
@@ -738,6 +787,7 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       attendees,
       printLogs,
       isLoading,
+      dbError,
       deskId,
       setDeskId,
       isLoggedIn,
