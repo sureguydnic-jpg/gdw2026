@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useAttendees } from '../context/AttendeeContext';
 import type { Attendee } from '../types';
-import { Sparkles, CheckCircle, Shield, Phone, Mail, Award, ArrowLeft } from 'lucide-react';
+import { Sparkles, CheckCircle, Shield, Phone, Mail, Award, ArrowLeft, Loader2 } from 'lucide-react';
 
 export const PublicRegister: React.FC = () => {
-  const { addAttendee, attendees } = useAttendees();
+  const { addAttendee, attendees, isLoading } = useAttendees();
   
   const [name, setName] = useState('');
   const [organization, setOrganization] = useState('');
@@ -79,6 +79,22 @@ export const PublicRegister: React.FC = () => {
     setStep('form');
     setRegisteredAttendee(null);
   };
+
+  const searchParams = new URLSearchParams(window.location.search);
+  const hasCode = searchParams.has('code');
+
+  if (isLoading && hasCode) {
+    return (
+      <div style={viewportStyle}>
+        <div className="glass glow" style={containerStyle}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 0', gap: '1rem' }}>
+            <Loader2 size={36} className="animate-spin" style={{ color: 'var(--accent)' }} />
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontFamily: 'var(--font-body)' }}>티켓 정보를 불러오는 중입니다...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={viewportStyle}>

@@ -6,6 +6,7 @@ import { supabase, isSupabaseConfigured } from '../supabaseClient';
 interface AttendeeContextType {
   attendees: Attendee[];
   printLogs: PrintLog[];
+  isLoading: boolean;
   deskId: string;
   setDeskId: (id: string) => void;
   isLoggedIn: boolean;
@@ -208,6 +209,7 @@ const mapPrintLogToDb = (log: PrintLog) => ({
 export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [printLogs, setPrintLogs] = useState<PrintLog[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [deskId, setDeskIdState] = useState<string>('Desk-01');
   const [settings, setSettingsState] = useState<PrintSettings>({ pageWidth: 80, pageHeight: 50 });
   
@@ -250,10 +252,12 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setPrintLogs([]);
       localStorage.setItem('mice_print_logs', JSON.stringify([]));
     }
+    setIsLoading(false);
   };
 
   // Fetch all data from Supabase
   const fetchAllData = async () => {
+    setIsLoading(true);
     try {
       const { data: attData, error: attError } = await supabase
         .from('attendees')
@@ -296,6 +300,8 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } catch (err) {
       console.error('Supabase 데이터 로드 실패. 로컬 저장소 모드로 대체합니다:', err);
       loadFromLocalStorageFallback();
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -660,6 +666,7 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     <AttendeeContext.Provider value={{
       attendees,
       printLogs,
+      isLoading,
       deskId,
       setDeskId,
       isLoggedIn,
