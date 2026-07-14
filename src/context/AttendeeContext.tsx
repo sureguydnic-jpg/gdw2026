@@ -259,44 +259,87 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const fetchAllData = async () => {
     setIsLoading(true);
     try {
-      const { data: attData, error: attError } = await supabase
-        .from('attendees')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const isPublicView = window.location.search.includes('view=public-register');
+      const searchParams = new URLSearchParams(window.location.search);
+      const codeParam = searchParams.get('code');
 
-      if (attError) throw attError;
-
-      const { data: logData, error: logError } = await supabase
-        .from('print_logs')
-        .select('*')
-        .order('printed_at', { ascending: false });
-
-      if (logError) throw logError;
-
-      const mappedAttendees = (attData || []).map(mapDbToAttendee);
-      const mappedLogs = (logData || []).map(mapDbToPrintLog);
-
-      if (mappedAttendees.length === 0) {
-        console.log('Supabase가 비어 있어 초기 데이터를 주입(seeding)합니다.');
-        const dbAttendees = INITIAL_ATTENDEES.map(mapAttendeeToDb);
-        const { error: seedError } = await supabase
-          .from('attendees')
-          .insert(dbAttendees);
-        
-        if (seedError) {
-          console.error('더미 데이터 주입 실패:', seedError);
-        } else {
-          const { data: freshAtt } = await supabase
+      if (isPublicView) {
+        if (codeParam) {
+          // [초특급 최적화 1] 일반 모바일 티켓 조회 화면에서는 전체 목록을 가져오지 않고, 오직 해당 티켓 코드의 정보만 단건 조회합니다!
+          const { data, error } = await supabase
             .from('attendees')
             .select('*')
-            .order('created_at', { ascending: false });
-          setAttendees((freshAtt || []).map(mapDbToAttendee));
-        }
-      } else {
-        setAttendees(mappedAttendees);
-      }
+            .eq('code', codeParam)
+            .maybeSingle();
 
-      setPrintLogs(mappedLogs);
+          if (error) {
+            console.warn('모바일 티켓 단건 조회 실패:', error);
+            setAttendees([]);
+          } else if (data) {
+            setAttendees([mapDbToAttendee(data)]);
+          } else {
+            setAttendees([]);
+          }
+        } else {
+          // [초특급 최적화 2] 모바일 등록 폼 화면에서는 전체 목록을 가져올 필요가 없으므로,
+          // 코드 번호 자동 생성을 위해 현재 저장된 가장 큰 코드 정보 1건만 조회합니다.
+          const { data, error } = await supabase
+            .from('attendees')
+            .select('code')
+            .order('code', { ascending: false })
+            .limit(1);
+
+          if (error) {
+            console.warn('모바일 등록 코드 조회 실패:', error);
+            setAttendees([]);
+          } else if (data && data.length > 0) {
+            setAttendees([{ code: data[0].code } as any]);
+          } else {
+            setAttendees([]);
+          }
+        }
+        setPrintLogs([]);
+      } else {
+        // 관리자/데스크 화면에서는 기존처럼 전체 데이터를 수집
+        const { data: attData, error: attError } = await supabase
+          .from('attendees')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (attError) throw attError;
+
+        const { data: logData, error: logError } = await supabase
+          .from('print_logs')
+          .select('*')
+          .order('printed_at', { ascending: false });
+
+        if (logError) throw logError;
+
+        const mappedAttendees = (attData || []).map(mapDbToAttendee);
+        const mappedLogs = (logData || []).map(mapDbToPrintLog);
+
+        if (mappedAttendees.length === 0) {
+          console.log('Supabase가 비어 있어 초기 데이터를 주입(seeding)합니다.');
+          const dbAttendees = INITIAL_ATTENDEES.map(mapAttendeeToDb);
+          const { error: seedError } = await supabase
+            .from('attendees')
+            .insert(dbAttendees);
+          
+          if (seedError) {
+            console.error('더미 데이터 주입 실패:', seedError);
+          } else {
+            const { data: freshAtt } = await supabase
+              .from('attendees')
+              .select('*')
+              .order('created_at', { ascending: false });
+            setAttendees((freshAtt || []).map(mapDbToAttendee));
+          }
+        } else {
+          setAttendees(mappedAttendees);
+        }
+
+        setPrintLogs(mappedLogs);
+      }
     } catch (err) {
       console.error('Supabase 데이터 로드 실패. 로컬 저장소 모드로 대체합니다:', err);
       loadFromLocalStorageFallback();
