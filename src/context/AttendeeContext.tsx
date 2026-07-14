@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { Attendee, PrintLog, PrintSettings } from '../types';
+import { supabase, isSupabaseConfigured } from '../supabaseClient';
+
 
 interface AttendeeContextType {
   attendees: Attendee[];
@@ -146,6 +148,63 @@ const INITIAL_ATTENDEES: Attendee[] = [
   }
 ];
 
+// --- Mapping Helpers for Supabase DB (snake_case) to Frontend Types (camelCase) ---
+const mapDbToAttendee = (db: any): Attendee => ({
+  id: db.id,
+  code: db.code,
+  type: db.type,
+  organization: db.organization,
+  position: db.position || '',
+  name: db.name,
+  phone: db.phone || undefined,
+  email: db.email || undefined,
+  privacyAgree: db.privacy_agree ?? false,
+  isAttended: db.is_attended ?? false,
+  attendedAt: db.attended_at || undefined,
+  registeredType: db.registered_type as '사전' | '현장',
+  printedCount: db.printed_count ?? 0,
+  printedBy: db.printed_by || undefined,
+});
+
+const mapAttendeeToDb = (att: Attendee) => ({
+  id: att.id,
+  code: att.code,
+  type: att.type,
+  organization: att.organization,
+  position: att.position || null,
+  name: att.name,
+  phone: att.phone || null,
+  email: att.email || null,
+  privacy_agree: att.privacyAgree ?? false,
+  is_attended: att.isAttended ?? false,
+  attended_at: att.attendedAt || null,
+  registered_type: att.registeredType,
+  printed_count: att.printedCount ?? 0,
+  printed_by: att.printedBy || null,
+});
+
+const mapDbToPrintLog = (db: any): PrintLog => ({
+  id: db.id,
+  attendeeId: db.attendee_id,
+  name: db.name,
+  organization: db.organization,
+  type: db.type,
+  printedAt: db.printed_at,
+  deskId: db.desk_id,
+  registeredType: db.registered_type as '사전' | '현장',
+});
+
+const mapPrintLogToDb = (log: PrintLog) => ({
+  id: log.id,
+  attendee_id: log.attendeeId,
+  name: log.name,
+  organization: log.organization,
+  type: log.type,
+  printed_at: log.printedAt,
+  desk_id: log.deskId,
+  registered_type: log.registeredType,
+});
+
 export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [printLogs, setPrintLogs] = useState<PrintLog[]>([]);
@@ -158,6 +217,89 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const channel = React.useMemo(() => new BroadcastChannel('mice_idcard_sync'), []);
 
+  // Settings Load Utility
+  const loadSettingsFromLocalStorage = () => {
+    const savedSettings = localStorage.getItem('mice_print_settings');
+    if (savedSettings) {
+      const parsed = JSON.parse(savedSettings);
+      setSettingsState(parsed);
+      document.documentElement.style.setProperty('--page-width', `${parsed.pageWidth}mm`);
+      document.documentElement.style.setProperty('--page-height', `${parsed.pageHeight}mm`);
+    } else {
+      setSettingsState({ pageWidth: 80, pageHeight: 50 });
+      document.documentElement.style.setProperty('--page-width', '80mm');
+      document.documentElement.style.setProperty('--page-height', '50mm');
+    }
+  };
+
+  // LocalStorage Fallback Loader for Attendees & Print Logs
+  const loadFromLocalStorageFallback = () => {
+    const savedAttendees = localStorage.getItem('mice_attendees');
+    const savedLogs = localStorage.getItem('mice_print_logs');
+    
+    if (savedAttendees) {
+      setAttendees(JSON.parse(savedAttendees));
+    } else {
+      setAttendees(INITIAL_ATTENDEES);
+      localStorage.setItem('mice_attendees', JSON.stringify(INITIAL_ATTENDEES));
+    }
+
+    if (savedLogs) {
+      setPrintLogs(JSON.parse(savedLogs));
+    } else {
+      setPrintLogs([]);
+      localStorage.setItem('mice_print_logs', JSON.stringify([]));
+    }
+  };
+
+  // Fetch all data from Supabase
+  const fetchAllData = async () => {
+    try {
+      const { data: attData, error: attError } = await supabase
+        .from('attendees')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (attError) throw attError;
+
+      const { data: logData, error: logError } = await supabase
+        .from('print_logs')
+        .select('*')
+        .order('printed_at', { ascending: false });
+
+      if (logError) throw logError;
+
+      const mappedAttendees = (attData || []).map(mapDbToAttendee);
+      const mappedLogs = (logData || []).map(mapDbToPrintLog);
+
+      if (mappedAttendees.length === 0) {
+        console.log('Supabase가 비어 있어 초기 데이터를 주입(seeding)합니다.');
+        const dbAttendees = INITIAL_ATTENDEES.map(mapAttendeeToDb);
+        const { error: seedError } = await supabase
+          .from('attendees')
+          .insert(dbAttendees);
+        
+        if (seedError) {
+          console.error('더미 데이터 주입 실패:', seedError);
+        } else {
+          const { data: freshAtt } = await supabase
+            .from('attendees')
+            .select('*')
+            .order('created_at', { ascending: false });
+          setAttendees((freshAtt || []).map(mapDbToAttendee));
+        }
+      } else {
+        setAttendees(mappedAttendees);
+      }
+
+      setPrintLogs(mappedLogs);
+    } catch (err) {
+      console.error('Supabase 데이터 로드 실패. 로컬 저장소 모드로 대체합니다:', err);
+      loadFromLocalStorageFallback();
+    }
+  };
+
+  // Sync session and settings on mount
   useEffect(() => {
     const savedDeskId = localStorage.getItem('mice_desk_id');
     if (savedDeskId) {
@@ -171,6 +313,118 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setIsLoggedIn(session.isLoggedIn);
       setUserRole(session.userRole);
     }
+
+    loadSettingsFromLocalStorage();
+  }, []);
+
+  // Settings sync listener (always active)
+  useEffect(() => {
+    const handleSyncMessage = (event: MessageEvent) => {
+      if (event.data === 'SYNC_SETTINGS' || event.data === 'SYNC_DATA') {
+        loadSettingsFromLocalStorage();
+      }
+    };
+
+    channel.addEventListener('message', handleSyncMessage);
+    
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'mice_print_settings') {
+        loadSettingsFromLocalStorage();
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      channel.removeEventListener('message', handleSyncMessage);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [channel]);
+
+  // LocalStorage Sync Listener for Attendees/Logs (Only if Supabase is NOT configured)
+  useEffect(() => {
+    if (isSupabaseConfigured) return;
+
+    loadFromLocalStorageFallback();
+
+    const handleSyncMessage = (event: MessageEvent) => {
+      if (event.data === 'SYNC_DATA') {
+        loadFromLocalStorageFallback();
+      }
+    };
+
+    channel.addEventListener('message', handleSyncMessage);
+    
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'mice_attendees' || e.key === 'mice_print_logs') {
+        loadFromLocalStorageFallback();
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      channel.removeEventListener('message', handleSyncMessage);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [channel]);
+
+  // Supabase Fetch & Realtime Listener (Only if Supabase is configured)
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+
+    fetchAllData();
+
+    const channelSubscription = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'attendees' },
+        (payload: any) => {
+          console.log('Attendees Realtime Change:', payload);
+          const eventType = payload.eventType;
+          const newRecord = payload.new;
+          const oldRecord = payload.old;
+
+          if (eventType === 'INSERT') {
+            const attendee = mapDbToAttendee(newRecord);
+            setAttendees((prev) => {
+              if (prev.some((a) => a.id === attendee.id)) return prev;
+              return [attendee, ...prev];
+            });
+          } else if (eventType === 'UPDATE') {
+            const attendee = mapDbToAttendee(newRecord);
+            setAttendees((prev) =>
+              prev.map((a) => (a.id === attendee.id ? attendee : a))
+            );
+          } else if (eventType === 'DELETE') {
+            setAttendees((prev) => prev.filter((a) => a.id !== oldRecord.id));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'print_logs' },
+        (payload: any) => {
+          console.log('Print Logs Realtime Change:', payload);
+          const eventType = payload.eventType;
+          const newRecord = payload.new;
+          const oldRecord = payload.old;
+
+          if (eventType === 'INSERT') {
+            const log = mapDbToPrintLog(newRecord);
+            setPrintLogs((prev) => {
+              if (prev.some((l) => l.id === log.id)) return prev;
+              return [log, ...prev];
+            });
+          } else if (eventType === 'DELETE') {
+            setPrintLogs((prev) => prev.filter((l) => l.id !== oldRecord.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channelSubscription);
+    };
   }, []);
 
   const setDeskId = (id: string) => {
@@ -218,63 +472,8 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     document.documentElement.style.setProperty('--page-width', `${newSettings.pageWidth}mm`);
     document.documentElement.style.setProperty('--page-height', `${newSettings.pageHeight}mm`);
     
-    channel.postMessage('SYNC_DATA');
+    channel.postMessage('SYNC_SETTINGS');
   };
-
-  const loadFromLocalStorage = () => {
-    const savedAttendees = localStorage.getItem('mice_attendees');
-    const savedLogs = localStorage.getItem('mice_print_logs');
-    const savedSettings = localStorage.getItem('mice_print_settings');
-    
-    if (savedAttendees) {
-      setAttendees(JSON.parse(savedAttendees));
-    } else {
-      setAttendees(INITIAL_ATTENDEES);
-      localStorage.setItem('mice_attendees', JSON.stringify(INITIAL_ATTENDEES));
-    }
-
-    if (savedLogs) {
-      setPrintLogs(JSON.parse(savedLogs));
-    } else {
-      setPrintLogs([]);
-      localStorage.setItem('mice_print_logs', JSON.stringify([]));
-    }
-
-    if (savedSettings) {
-      const parsed = JSON.parse(savedSettings);
-      setSettingsState(parsed);
-      document.documentElement.style.setProperty('--page-width', `${parsed.pageWidth}mm`);
-      document.documentElement.style.setProperty('--page-height', `${parsed.pageHeight}mm`);
-    } else {
-      setSettingsState({ pageWidth: 80, pageHeight: 50 });
-      document.documentElement.style.setProperty('--page-width', '80mm');
-      document.documentElement.style.setProperty('--page-height', '50mm');
-    }
-  };
-
-  useEffect(() => {
-    loadFromLocalStorage();
-
-    const handleSyncMessage = (event: MessageEvent) => {
-      if (event.data === 'SYNC_DATA') {
-        loadFromLocalStorage();
-      }
-    };
-
-    channel.addEventListener('message', handleSyncMessage);
-    
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'mice_attendees' || e.key === 'mice_print_logs') {
-        loadFromLocalStorage();
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-      channel.removeEventListener('message', handleSyncMessage);
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [channel]);
 
   const saveAndBroadcast = (updatedAttendees: Attendee[], updatedLogs: PrintLog[]) => {
     localStorage.setItem('mice_attendees', JSON.stringify(updatedAttendees));
@@ -299,8 +498,24 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       registeredType: newAtt.registeredType || '현장'
     };
 
-    const updated = [created, ...attendees];
-    saveAndBroadcast(updated, printLogs);
+    if (isSupabaseConfigured) {
+      supabase
+        .from('attendees')
+        .insert(mapAttendeeToDb(created))
+        .then(({ error }: any) => {
+          if (error) {
+            console.error('Supabase addAttendee 에러:', error);
+          }
+        });
+      
+      setAttendees(prev => {
+        if (prev.some(a => a.id === created.id)) return prev;
+        return [created, ...prev];
+      });
+    } else {
+      const updated = [created, ...attendees];
+      saveAndBroadcast(updated, printLogs);
+    }
     return created;
   };
 
@@ -322,26 +537,34 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       };
     });
 
-    const updated = [...attendees, ...imported];
-    saveAndBroadcast(updated, printLogs);
+    if (isSupabaseConfigured) {
+      const dbAttendees = imported.map(mapAttendeeToDb);
+      supabase
+        .from('attendees')
+        .insert(dbAttendees)
+        .then(({ error }: any) => {
+          if (error) {
+            console.error('Supabase importAttendees 에러:', error);
+          }
+        });
+      setAttendees(prev => [...prev, ...imported]);
+    } else {
+      const updated = [...attendees, ...imported];
+      saveAndBroadcast(updated, printLogs);
+    }
   };
 
   const printAttendee = (id: string) => {
-    const updatedAttendees = attendees.map(att => {
-      if (att.id === id) {
-        return {
-          ...att,
-          isAttended: true,
-          attendedAt: att.attendedAt || new Date().toISOString(),
-          printedCount: att.printedCount + 1,
-          printedBy: deskId
-        };
-      }
-      return att;
-    });
-
     const target = attendees.find(a => a.id === id);
     if (!target) return;
+
+    const updatedAttendee: Attendee = {
+      ...target,
+      isAttended: true,
+      attendedAt: target.attendedAt || new Date().toISOString(),
+      printedCount: target.printedCount + 1,
+      printedBy: deskId
+    };
 
     const newLog: PrintLog = {
       id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -354,25 +577,75 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       registeredType: target.registeredType
     };
 
-    const updatedLogs = [newLog, ...printLogs];
-    saveAndBroadcast(updatedAttendees, updatedLogs);
+    if (isSupabaseConfigured) {
+      Promise.all([
+        supabase
+          .from('attendees')
+          .update(mapAttendeeToDb(updatedAttendee))
+          .eq('id', id),
+        supabase
+          .from('print_logs')
+          .insert(mapPrintLogToDb(newLog))
+      ]).then(([attRes, logRes]: [any, any]) => {
+        if (attRes.error) console.error('Supabase print update error:', attRes.error);
+        if (logRes.error) console.error('Supabase print log insert error:', logRes.error);
+      });
+
+      setAttendees(prev => prev.map(a => a.id === id ? updatedAttendee : a));
+      setPrintLogs(prev => {
+        if (prev.some(l => l.id === newLog.id)) return prev;
+        return [newLog, ...prev];
+      });
+    } else {
+      const updatedAttendees = attendees.map(att => att.id === id ? updatedAttendee : att);
+      const updatedLogs = [newLog, ...printLogs];
+      saveAndBroadcast(updatedAttendees, updatedLogs);
+    }
   };
 
   const clearAllData = () => {
-    localStorage.removeItem('mice_attendees');
-    localStorage.removeItem('mice_print_logs');
-    setAttendees([]);
-    setPrintLogs([]);
-    channel.postMessage('SYNC_DATA');
+    if (isSupabaseConfigured) {
+      Promise.all([
+        supabase.from('print_logs').delete().neq('id', '_dummy_'),
+        supabase.from('attendees').delete().neq('id', '_dummy_')
+      ]).then(([logRes, attRes]: [any, any]) => {
+        if (logRes.error) console.error('Supabase clear print_logs error:', logRes.error);
+        if (attRes.error) console.error('Supabase clear attendees error:', attRes.error);
+      });
+      setAttendees([]);
+      setPrintLogs([]);
+    } else {
+      localStorage.removeItem('mice_attendees');
+      localStorage.removeItem('mice_print_logs');
+      setAttendees([]);
+      setPrintLogs([]);
+      channel.postMessage('SYNC_DATA');
+    }
   };
 
   const generateDummyData = () => {
-    localStorage.setItem('mice_attendees', JSON.stringify(INITIAL_ATTENDEES));
-    localStorage.setItem('mice_print_logs', JSON.stringify([]));
-    setAttendees(INITIAL_ATTENDEES);
-    setPrintLogs([]);
-    channel.postMessage('SYNC_DATA');
+    if (isSupabaseConfigured) {
+      Promise.all([
+        supabase.from('print_logs').delete().neq('id', '_dummy_'),
+        supabase.from('attendees').delete().neq('id', '_dummy_')
+      ]).then(async () => {
+        const dbAttendees = INITIAL_ATTENDEES.map(mapAttendeeToDb);
+        const { error }: any = await supabase.from('attendees').insert(dbAttendees);
+        if (error) {
+          console.error('Supabase generateDummyData insert error:', error);
+        }
+      });
+      setAttendees(INITIAL_ATTENDEES);
+      setPrintLogs([]);
+    } else {
+      localStorage.setItem('mice_attendees', JSON.stringify(INITIAL_ATTENDEES));
+      localStorage.setItem('mice_print_logs', JSON.stringify([]));
+      setAttendees(INITIAL_ATTENDEES);
+      setPrintLogs([]);
+      channel.postMessage('SYNC_DATA');
+    }
   };
+
 
   return (
     <AttendeeContext.Provider value={{
