@@ -2,6 +2,18 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { Attendee, PrintLog, PrintSettings } from '../types';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 
+const generateUUID = (): string => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  // Fallback RFC4122 version 4 UUID generator
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
+
 
 interface AttendeeContextType {
   attendees: Attendee[];
@@ -32,7 +44,7 @@ const AttendeeContext = createContext<AttendeeContextType | undefined>(undefined
 
 const INITIAL_ATTENDEES: Attendee[] = [
   {
-    id: 'att-1',
+    id: '00000000-0000-0000-0000-000000000001',
     code: '10001',
     type: 'VIP',
     organization: '고양컨벤션뷰로',
@@ -46,7 +58,7 @@ const INITIAL_ATTENDEES: Attendee[] = [
     printedCount: 0,
   },
   {
-    id: 'att-2',
+    id: '00000000-0000-0000-0000-000000000002',
     code: '10002',
     type: '연사',
     organization: '한국관광공사',
@@ -60,7 +72,7 @@ const INITIAL_ATTENDEES: Attendee[] = [
     printedCount: 0,
   },
   {
-    id: 'att-3',
+    id: '00000000-0000-0000-0000-000000000003',
     code: '10003',
     type: 'VIP',
     organization: 'International Congress and Convention Association',
@@ -74,7 +86,7 @@ const INITIAL_ATTENDEES: Attendee[] = [
     printedCount: 0,
   },
   {
-    id: 'att-4',
+    id: '00000000-0000-0000-0000-000000000004',
     code: '10004',
     type: '일반',
     organization: '경희대학교 MICE학과',
@@ -88,7 +100,7 @@ const INITIAL_ATTENDEES: Attendee[] = [
     printedCount: 0,
   },
   {
-    id: 'att-5',
+    id: '00000000-0000-0000-0000-000000000005',
     code: '10005',
     type: '일반',
     organization: '킨텍스(KINTEX)',
@@ -99,7 +111,7 @@ const INITIAL_ATTENDEES: Attendee[] = [
     printedCount: 0,
   },
   {
-    id: 'att-6',
+    id: '00000000-0000-0000-0000-000000000006',
     code: '10006',
     type: '스태프',
     organization: '플랜트포유 대행사',
@@ -110,7 +122,7 @@ const INITIAL_ATTENDEES: Attendee[] = [
     printedCount: 0,
   },
   {
-    id: 'att-7',
+    id: '00000000-0000-0000-0000-000000000007',
     code: '10007',
     type: '기자',
     organization: 'MICE 매거진',
@@ -121,7 +133,7 @@ const INITIAL_ATTENDEES: Attendee[] = [
     printedCount: 0,
   },
   {
-    id: 'att-8',
+    id: '00000000-0000-0000-0000-000000000008',
     code: '10008',
     type: '연사',
     organization: 'MCI Group Korea',
@@ -132,7 +144,7 @@ const INITIAL_ATTENDEES: Attendee[] = [
     printedCount: 0,
   },
   {
-    id: 'att-9',
+    id: '00000000-0000-0000-0000-000000000009',
     code: '10009',
     type: '일반',
     organization: '고양시청 MICE산업과',
@@ -143,7 +155,7 @@ const INITIAL_ATTENDEES: Attendee[] = [
     printedCount: 0,
   },
   {
-    id: 'att-10',
+    id: '00000000-0000-0000-0000-000000000010',
     code: '10010',
     type: '스태프',
     organization: '킨텍스 보안팀',
@@ -645,7 +657,7 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     
     const created: Attendee = {
       ...newAtt,
-      id: `att-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: generateUUID(),
       code: String(nextCode),
       isAttended: newAtt.isAttended ?? false,
       attendedAt: newAtt.isAttended ? new Date().toISOString() : undefined,
@@ -657,7 +669,7 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     let newLog: PrintLog | null = null;
     if (created.isAttended && created.printedCount > 0) {
       newLog = {
-        id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: generateUUID(),
         attendeeId: created.id,
         name: created.name,
         organization: created.organization,
@@ -720,7 +732,7 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const currentCode = att.code || String(startCode++);
       return {
         ...att,
-        id: `att-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: generateUUID(),
         code: currentCode,
         isAttended: false,
         printedCount: 0,
@@ -758,7 +770,7 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     const newLog: PrintLog = {
-      id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: generateUUID(),
       attendeeId: target.id,
       name: target.name,
       organization: target.organization,
@@ -797,8 +809,8 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const clearAllData = () => {
     if (!useLocalStorage) {
       Promise.all([
-        supabase.from('print_logs').delete().neq('id', '_dummy_'),
-        supabase.from('attendees').delete().neq('id', '_dummy_')
+        supabase.from('print_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        supabase.from('attendees').delete().neq('id', '00000000-0000-0000-0000-000000000000')
       ]).then(([logRes, attRes]: [any, any]) => {
         if (logRes.error) console.error('Supabase clear print_logs error:', logRes.error);
         if (attRes.error) console.error('Supabase clear attendees error:', attRes.error);
@@ -817,8 +829,8 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const generateDummyData = () => {
     if (!useLocalStorage) {
       Promise.all([
-        supabase.from('print_logs').delete().neq('id', '_dummy_'),
-        supabase.from('attendees').delete().neq('id', '_dummy_')
+        supabase.from('print_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        supabase.from('attendees').delete().neq('id', '00000000-0000-0000-0000-000000000000')
       ]).then(async () => {
         const dbAttendees = INITIAL_ATTENDEES.map(mapAttendeeToDb);
         const { error }: any = await supabase.from('attendees').insert(dbAttendees);
