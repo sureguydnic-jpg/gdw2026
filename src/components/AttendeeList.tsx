@@ -8,7 +8,7 @@ interface AttendeeListProps {
 }
 
 export const AttendeeList: React.FC<AttendeeListProps> = ({ onPrintTrigger }) => {
-  const { attendees, importAttendees, clearAllData, generateDummyData } = useAttendees();
+  const { attendees, importAttendees, clearAllData, generateDummyData, printAttendee } = useAttendees();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('ALL');
@@ -277,7 +277,10 @@ export const AttendeeList: React.FC<AttendeeListProps> = ({ onPrintTrigger }) =>
                     <td style={{ ...tdStyle, textAlign: 'right' }}>
                       <button 
                         style={btnPrintRowStyle} 
-                        onClick={() => onPrintTrigger(att)}
+                        onClick={() => {
+                          printAttendee(att.id);
+                          onPrintTrigger(att);
+                        }}
                         title="ID카드 출력"
                       >
                         <Printer size={14} style={{ marginRight: '4px' }} />

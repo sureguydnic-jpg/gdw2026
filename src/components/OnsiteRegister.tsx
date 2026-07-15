@@ -8,7 +8,7 @@ interface OnsiteRegisterProps {
 }
 
 export const OnsiteRegister: React.FC<OnsiteRegisterProps> = ({ onPrintTrigger }) => {
-  const { addAttendee, printAttendee } = useAttendees();
+  const { addAttendee, deskId } = useAttendees();
   
   const [name, setName] = useState('');
   const [organization, setOrganization] = useState('');
@@ -25,7 +25,7 @@ export const OnsiteRegister: React.FC<OnsiteRegisterProps> = ({ onPrintTrigger }
       return;
     }
 
-    // 1. 현장 등록 데이터 생성 (연락처, 이메일 포함)
+    // 1. 현장 등록 데이터 생성 (연락처, 이메일 포함) 및 즉시 발권 처리
     const newAttendee = addAttendee({
       name: name.trim(),
       organization: organization.trim(),
@@ -34,11 +34,13 @@ export const OnsiteRegister: React.FC<OnsiteRegisterProps> = ({ onPrintTrigger }
       phone: phone.trim() || undefined,
       email: email.trim() || undefined,
       privacyAgree: phone.trim() || email.trim() ? true : undefined,
-      registeredType: '현장' // 명시적 현장 지정
+      registeredType: '현장', // 명시적 현장 지정
+      isAttended: true,       // 현장 등록 즉시 발권 처리
+      printedCount: 1,        // 첫 인쇄 카운트
+      printedBy: deskId       // 현재 운영 데스크 ID 전달
     });
 
-    // 2. 즉시 명찰 출력 트리거 및 입장/참석 처리
-    printAttendee(newAttendee.id);
+    // 2. 즉시 명찰 출력 트리거 (printAttendee는 addAttendee 내부에서 자동 처리됨)
     onPrintTrigger(newAttendee);
 
     // 3. 입력 필드 초기화 (구분은 '일반' 유지)

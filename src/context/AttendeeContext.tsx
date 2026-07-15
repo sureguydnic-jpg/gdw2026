@@ -16,7 +16,12 @@ interface AttendeeContextType {
   logout: () => void;
   settings: PrintSettings;
   updateSettings: (newSettings: PrintSettings) => void;
-  addAttendee: (attendee: Omit<Attendee, 'id' | 'code' | 'isAttended' | 'printedCount' | 'registeredType'> & { registeredType?: '사전' | '현장' }) => Attendee;
+  addAttendee: (attendee: Omit<Attendee, 'id' | 'code' | 'isAttended' | 'printedCount' | 'registeredType'> & { 
+    registeredType?: '사전' | '현장';
+    isAttended?: boolean;
+    printedCount?: number;
+    printedBy?: string;
+  }) => Attendee;
   importAttendees: (newAttendees: Omit<Attendee, 'id' | 'isAttended' | 'printedCount' | 'registeredType'>[]) => void;
   printAttendee: (id: string) => void;
   clearAllData: () => void;
@@ -623,7 +628,12 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const addAttendee = (
-    newAtt: Omit<Attendee, 'id' | 'code' | 'isAttended' | 'printedCount' | 'registeredType'> & { registeredType?: '사전' | '현장' }
+    newAtt: Omit<Attendee, 'id' | 'code' | 'isAttended' | 'printedCount' | 'registeredType'> & { 
+      registeredType?: '사전' | '현장';
+      isAttended?: boolean;
+      printedCount?: number;
+      printedBy?: string;
+    }
   ) => {
     const codes = attendees.map(a => parseInt(a.code, 10)).filter(c => !isNaN(c));
     const nextCode = codes.length > 0 ? Math.max(...codes) + 1 : 10001;
@@ -632,28 +642,65 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ...newAtt,
       id: `att-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       code: String(nextCode),
-      isAttended: false,
-      printedCount: 0,
+      isAttended: newAtt.isAttended ?? false,
+      attendedAt: newAtt.isAttended ? new Date().toISOString() : undefined,
+      printedCount: newAtt.printedCount ?? 0,
+      printedBy: newAtt.printedBy,
       registeredType: newAtt.registeredType || '현장'
     };
 
+    let newLog: PrintLog | null = null;
+    if (created.isAttended && created.printedCount > 0) {
+      newLog = {
+        id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        attendeeId: created.id,
+        name: created.name,
+        organization: created.organization,
+        type: created.type,
+        printedAt: new Date().toISOString(),
+        deskId: created.printedBy || deskId,
+        registeredType: created.registeredType
+      };
+    }
+
     if (isSupabaseConfigured) {
-      supabase
-        .from('attendees')
-        .insert(mapAttendeeToDb(created))
-        .then(({ error }: any) => {
-          if (error) {
-            console.error('Supabase addAttendee 에러:', error);
+      const promises = [
+        supabase
+          .from('attendees')
+          .insert(mapAttendeeToDb(created))
+      ];
+      if (newLog) {
+        promises.push(
+          supabase
+            .from('print_logs')
+            .insert(mapPrintLogToDb(newLog))
+        );
+      }
+      
+      Promise.all(promises).then((results: any[]) => {
+        results.forEach((res, index) => {
+          if (res.error) {
+            console.error(`Supabase addAttendee/printLog 에러 [${index}]:`, res.error);
           }
         });
+      });
       
       setAttendees(prev => {
         if (prev.some(a => a.id === created.id)) return prev;
         return [created, ...prev];
       });
+
+      if (newLog) {
+        const log = newLog;
+        setPrintLogs(prev => {
+          if (prev.some(l => l.id === log.id)) return prev;
+          return [log, ...prev];
+        });
+      }
     } else {
-      const updated = [created, ...attendees];
-      saveAndBroadcast(updated, printLogs);
+      const updatedAttendees = [created, ...attendees];
+      const updatedLogs = newLog ? [newLog, ...printLogs] : printLogs;
+      saveAndBroadcast(updatedAttendees, updatedLogs);
     }
     return created;
   };
