@@ -492,9 +492,9 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   }, [channel]);
 
-  // LocalStorage Sync Listener for Attendees/Logs (Only if Supabase is NOT configured)
+  // LocalStorage Sync Listener for Attendees/Logs (Only if Supabase is NOT active)
   useEffect(() => {
-    if (isSupabaseConfigured) return;
+    if (!useLocalStorage) return;
 
     loadFromLocalStorageFallback();
 
@@ -517,7 +517,7 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       channel.removeEventListener('message', handleSyncMessage);
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [channel]);
+  }, [channel, useLocalStorage]);
 
   // Supabase Fetch & Realtime Listener (Only if Supabase is configured)
   useEffect(() => {
