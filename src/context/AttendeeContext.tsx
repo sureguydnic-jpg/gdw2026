@@ -217,6 +217,7 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [printLogs, setPrintLogs] = useState<PrintLog[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [dbError, setDbError] = useState<string | null>(null);
+  const [useLocalStorage, setUseLocalStorage] = useState<boolean>(!isSupabaseConfigured);
   const [deskId, setDeskIdState] = useState<string>('Desk-01');
   const [settings, setSettingsState] = useState<PrintSettings>({ pageWidth: 80, pageHeight: 50 });
   
@@ -297,6 +298,7 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             console.warn('모바일 티켓 단건 조회 실패:', error);
             setAttendees([]);
             setDbError('티켓 조회 중 오류가 발생했습니다.');
+            throw error;
           } else if (data) {
             setAttendees([mapDbToAttendee(data)]);
           } else {
@@ -336,6 +338,7 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
               } else {
                 setAttendees([]);
                 setDbError('초기 데이터 주입 실패로 조회할 수 없습니다.');
+                throw seedError;
               }
             } else {
               setAttendees([]);
@@ -405,6 +408,7 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           
           if (seedError) {
             console.error('더미 데이터 주입 실패:', seedError);
+            throw seedError;
           } else {
             const { data: freshAtt } = await withTimeout(
               supabase
@@ -423,6 +427,7 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
     } catch (err: any) {
       console.error('Supabase 데이터 로드 실패. 로컬 저장소 모드로 대체합니다:', err);
+      setUseLocalStorage(true);
       setDbError(
         err.message === 'TIMEOUT'
           ? '데이터베이스 연결 시간이 초과되었습니다.'
@@ -663,7 +668,7 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       };
     }
 
-    if (isSupabaseConfigured) {
+    if (!useLocalStorage) {
       const promises = [
         supabase
           .from('attendees')
@@ -723,7 +728,7 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       };
     });
 
-    if (isSupabaseConfigured) {
+    if (!useLocalStorage) {
       const dbAttendees = imported.map(mapAttendeeToDb);
       supabase
         .from('attendees')
@@ -763,7 +768,7 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       registeredType: target.registeredType
     };
 
-    if (isSupabaseConfigured) {
+    if (!useLocalStorage) {
       Promise.all([
         supabase
           .from('attendees')
@@ -790,7 +795,7 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const clearAllData = () => {
-    if (isSupabaseConfigured) {
+    if (!useLocalStorage) {
       Promise.all([
         supabase.from('print_logs').delete().neq('id', '_dummy_'),
         supabase.from('attendees').delete().neq('id', '_dummy_')
@@ -810,7 +815,7 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const generateDummyData = () => {
-    if (isSupabaseConfigured) {
+    if (!useLocalStorage) {
       Promise.all([
         supabase.from('print_logs').delete().neq('id', '_dummy_'),
         supabase.from('attendees').delete().neq('id', '_dummy_')
