@@ -35,7 +35,7 @@ export const LoginGate: React.FC = () => {
             <Lock size={28} style={{ color: 'var(--accent)' }} />
           </div>
           <h1 style={titleStyle}>GOYANG DESTINATION WEEK 2026</h1>
-          <p style={subtitleStyle}>명찰 인쇄 및 현장 입장 관리 시스템</p>
+          <p style={subtitleStyle}>Smart Hub (명찰 및 현장 입장 관리)</p>
         </div>
 
         <form onSubmit={handleSubmit} style={formStyle}>

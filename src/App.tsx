@@ -62,7 +62,7 @@ const MainApp: React.FC = () => {
           <Sparkles size={20} style={{ color: 'var(--accent)' }} />
           <div>
             <span style={logoMainText}>GOYANG DESTINATION WEEK 2026</span>
-            <span style={logoSubText}>고양 데스티네이션 위크 명찰 인쇄 시스템</span>
+            <span style={logoSubText}>Smart Hub (명찰 및 현장 입장 관리)</span>
           </div>
         </div>
         
