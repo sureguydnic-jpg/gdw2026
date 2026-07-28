@@ -84,7 +84,7 @@ export const LoginGate: React.FC = () => {
         </div>
 
         <div style={footerStyle}>
-          © 2026 Goyang Destination Week. All rights reserved.
+          Copyright © 2026 DNIC INC. All rights reserved.
         </div>
       </div>
 

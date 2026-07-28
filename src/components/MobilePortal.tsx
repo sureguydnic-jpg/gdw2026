@@ -178,7 +178,7 @@ export const MobilePortal: React.FC = () => {
 
           {/* 푸터 */}
           <footer style={footerStyle}>
-            © 2026 Goyang Convention Bureau. All rights reserved.
+            Copyright © 2026 DNIC INC. All rights reserved.
           </footer>
         </div>
       )}
