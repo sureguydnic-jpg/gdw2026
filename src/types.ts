@@ -30,3 +30,24 @@ export interface PrintSettings {
   pageWidth: number;  // mm 단위
   pageHeight: number; // mm 단위
 }
+
+export interface PreQna {
+  id: string;
+  name: string;
+  organization: string;
+  question: string;
+  createdAt: string;
+  isReviewed: boolean;
+}
+
+export interface PreSurvey {
+  id: string;
+  name?: string;
+  organization?: string;
+  rating: number;
+  satisfaction: string;
+  interestAreas: string[];
+  suggestions: string;
+  createdAt: string;
+}
+

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { Attendee, PrintLog, PrintSettings } from '../types';
+import type { Attendee, PrintLog, PrintSettings, PreQna, PreSurvey } from '../types';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 
 const generateUUID = (): string => {
@@ -18,6 +18,8 @@ const generateUUID = (): string => {
 interface AttendeeContextType {
   attendees: Attendee[];
   printLogs: PrintLog[];
+  preQnas: PreQna[];
+  preSurveys: PreSurvey[];
   isLoading: boolean;
   dbError: string | null;
   deskId: string;
@@ -38,7 +40,12 @@ interface AttendeeContextType {
   printAttendee: (id: string) => void;
   clearAllData: () => void;
   generateDummyData: () => void;
+  addPreQna: (qna: Omit<PreQna, 'id' | 'createdAt' | 'isReviewed'>) => PreQna;
+  addPreSurvey: (survey: Omit<PreSurvey, 'id' | 'createdAt'>) => PreSurvey;
+  toggleQnaReviewed: (id: string) => void;
+  clearPortalData: () => void;
 }
+
 
 const AttendeeContext = createContext<AttendeeContextType | undefined>(undefined);
 
@@ -224,9 +231,52 @@ const mapPrintLogToDb = (log: PrintLog) => ({
   registered_type: log.registeredType,
 });
 
+const mapDbToPreQna = (db: any): PreQna => ({
+  id: db.id,
+  name: db.name,
+  organization: db.organization,
+  question: db.question,
+  createdAt: db.created_at,
+  isReviewed: db.is_reviewed ?? false,
+});
+
+const mapPreQnaToDb = (qna: PreQna) => ({
+  id: qna.id,
+  name: qna.name,
+  organization: qna.organization,
+  question: qna.question,
+  created_at: qna.createdAt,
+  is_reviewed: qna.isReviewed,
+});
+
+const mapDbToPreSurvey = (db: any): PreSurvey => ({
+  id: db.id,
+  name: db.name || undefined,
+  organization: db.organization || undefined,
+  rating: db.rating,
+  satisfaction: db.satisfaction,
+  interestAreas: db.interest_areas || [],
+  suggestions: db.suggestions || '',
+  createdAt: db.created_at,
+});
+
+const mapPreSurveyToDb = (survey: PreSurvey) => ({
+  id: survey.id,
+  name: survey.name || null,
+  organization: survey.organization || null,
+  rating: survey.rating,
+  satisfaction: survey.satisfaction,
+  interest_areas: survey.interestAreas,
+  suggestions: survey.suggestions || null,
+  created_at: survey.createdAt,
+});
+
+
 export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [printLogs, setPrintLogs] = useState<PrintLog[]>([]);
+  const [preQnas, setPreQnas] = useState<PreQna[]>([]);
+  const [preSurveys, setPreSurveys] = useState<PreSurvey[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [dbError, setDbError] = useState<string | null>(null);
   const [useLocalStorage, setUseLocalStorage] = useState<boolean>(!isSupabaseConfigured);
@@ -258,6 +308,8 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const loadFromLocalStorageFallback = () => {
     const savedAttendees = localStorage.getItem('mice_attendees');
     const savedLogs = localStorage.getItem('mice_print_logs');
+    const savedQnas = localStorage.getItem('mice_pre_qnas');
+    const savedSurveys = localStorage.getItem('mice_pre_surveys');
     
     if (savedAttendees) {
       setAttendees(JSON.parse(savedAttendees));
@@ -271,6 +323,20 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } else {
       setPrintLogs([]);
       localStorage.setItem('mice_print_logs', JSON.stringify([]));
+    }
+
+    if (savedQnas) {
+      setPreQnas(JSON.parse(savedQnas));
+    } else {
+      setPreQnas([]);
+      localStorage.setItem('mice_pre_qnas', JSON.stringify([]));
+    }
+
+    if (savedSurveys) {
+      setPreSurveys(JSON.parse(savedSurveys));
+    } else {
+      setPreSurveys([]);
+      localStorage.setItem('mice_pre_surveys', JSON.stringify([]));
     }
     setIsLoading(false);
   };
@@ -381,32 +447,64 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setPrintLogs([]);
       } else {
         // 관리자/데스크 화면에서는 기존처럼 전체 데이터를 수집
-        // [병렬 최적화] 두 테이블 조회를 동시에 처리하여 로딩 속도를 향상시킵니다.
-        const [attResult, logResult] = await Promise.all([
+        // [병렬 최적화] 네 테이블 조회를 동시에 처리하되, 일부 테이블 부재 시 개별적으로 폴백 처리합니다.
+        const [attResult, logResult, qnaResult, surveyResult] = await Promise.all([
           withTimeout(
             supabase
               .from('attendees')
               .select('*')
               .order('created_at', { ascending: false }),
             5000
-          ),
+          ).catch(err => ({ error: err, data: null })),
           withTimeout(
             supabase
               .from('print_logs')
               .select('*')
               .order('printed_at', { ascending: false }),
             5000
-          )
+          ).catch(err => ({ error: err, data: null })),
+          withTimeout(
+            supabase
+              .from('pre_qnas')
+              .select('*')
+              .order('created_at', { ascending: false }),
+            5000
+          ).catch(err => ({ error: err, data: null })),
+          withTimeout(
+            supabase
+              .from('pre_surveys')
+              .select('*')
+              .order('created_at', { ascending: false }),
+            5000
+          ).catch(err => ({ error: err, data: null }))
         ]);
 
-        const { data: attData, error: attError } = attResult;
-        const { data: logData, error: logError } = logResult;
+        const { data: attData, error: attError } = attResult as any;
+        const { data: logData, error: logError } = logResult as any;
+        const { data: qnaData, error: qnaError } = qnaResult as any;
+        const { data: surveyData, error: surveyError } = surveyResult as any;
 
         if (attError) throw attError;
         if (logError) throw logError;
 
         const mappedAttendees = (attData || []).map(mapDbToAttendee);
         const mappedLogs = (logData || []).map(mapDbToPrintLog);
+
+        if (qnaError) {
+          console.warn('Supabase pre_qnas 테이블 조회 실패. 로컬 폴백을 시도합니다:', qnaError);
+          const savedQnas = localStorage.getItem('mice_pre_qnas');
+          setPreQnas(savedQnas ? JSON.parse(savedQnas) : []);
+        } else {
+          setPreQnas((qnaData || []).map(mapDbToPreQna));
+        }
+
+        if (surveyError) {
+          console.warn('Supabase pre_surveys 테이블 조회 실패. 로컬 폴백을 시도합니다:', surveyError);
+          const savedSurveys = localStorage.getItem('mice_pre_surveys');
+          setPreSurveys(savedSurveys ? JSON.parse(savedSurveys) : []);
+        } else {
+          setPreSurveys((surveyData || []).map(mapDbToPreSurvey));
+        }
 
         if (mappedAttendees.length === 0) {
           console.log('Supabase가 비어 있어 초기 데이터를 주입(seeding)합니다.');
@@ -507,7 +605,12 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     channel.addEventListener('message', handleSyncMessage);
     
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'mice_attendees' || e.key === 'mice_print_logs') {
+      if (
+        e.key === 'mice_attendees' || 
+        e.key === 'mice_print_logs' ||
+        e.key === 'mice_pre_qnas' ||
+        e.key === 'mice_pre_surveys'
+      ) {
         loadFromLocalStorageFallback();
       }
     };
@@ -525,10 +628,12 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     fetchAllData();
 
-    // [최적화] 모바일 셀프 등록/티켓 조회 화면(?view=public-register) 접속 시 실시간 웹소켓 구독을 생략합니다.
-    const isPublicView = window.location.search.includes('view=public-register');
+    // [최적화] 모바일 셀프 등록/티켓 조회/포털 화면 접속 시 실시간 웹소켓 구독을 생략합니다.
+    const isPublicView = 
+      window.location.search.includes('view=public-register') || 
+      window.location.search.includes('view=portal');
     if (isPublicView) {
-      console.log('모바일 셀프 등록 화면 접속: Supabase Realtime 웹소켓 구독을 생략합니다.');
+      console.log('모바일 화면 접속: Supabase Realtime 웹소켓 구독을 생략합니다.');
       return;
     }
 
@@ -578,6 +683,51 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             });
           } else if (eventType === 'DELETE') {
             setPrintLogs((prev) => prev.filter((l) => l.id !== oldRecord.id));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'pre_qnas' },
+        (payload: any) => {
+          console.log('PreQnas Realtime Change:', payload);
+          const eventType = payload.eventType;
+          const newRecord = payload.new;
+          const oldRecord = payload.old;
+
+          if (eventType === 'INSERT') {
+            const qna = mapDbToPreQna(newRecord);
+            setPreQnas((prev) => {
+              if (prev.some((q) => q.id === qna.id)) return prev;
+              return [qna, ...prev];
+            });
+          } else if (eventType === 'UPDATE') {
+            const qna = mapDbToPreQna(newRecord);
+            setPreQnas((prev) =>
+              prev.map((q) => (q.id === qna.id ? qna : q))
+            );
+          } else if (eventType === 'DELETE') {
+            setPreQnas((prev) => prev.filter((q) => q.id !== oldRecord.id));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'pre_surveys' },
+        (payload: any) => {
+          console.log('PreSurveys Realtime Change:', payload);
+          const eventType = payload.eventType;
+          const newRecord = payload.new;
+          const oldRecord = payload.old;
+
+          if (eventType === 'INSERT') {
+            const survey = mapDbToPreSurvey(newRecord);
+            setPreSurveys((prev) => {
+              if (prev.some((s) => s.id === survey.id)) return prev;
+              return [survey, ...prev];
+            });
+          } else if (eventType === 'DELETE') {
+            setPreSurveys((prev) => prev.filter((s) => s.id !== oldRecord.id));
           }
         }
       )
@@ -849,11 +999,107 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const addPreQna = (qna: Omit<PreQna, 'id' | 'createdAt' | 'isReviewed'>): PreQna => {
+    const created: PreQna = {
+      ...qna,
+      id: generateUUID(),
+      createdAt: new Date().toISOString(),
+      isReviewed: false,
+    };
+
+    if (!useLocalStorage) {
+      supabase
+        .from('pre_qnas')
+        .insert(mapPreQnaToDb(created))
+        .then(({ error }: any) => {
+          if (error) console.error('Supabase addPreQna error:', error);
+        });
+      setPreQnas((prev) => [created, ...prev]);
+    } else {
+      const updated = [created, ...preQnas];
+      localStorage.setItem('mice_pre_qnas', JSON.stringify(updated));
+      setPreQnas(updated);
+      channel.postMessage('SYNC_DATA');
+    }
+    return created;
+  };
+
+  const addPreSurvey = (survey: Omit<PreSurvey, 'id' | 'createdAt'>): PreSurvey => {
+    const created: PreSurvey = {
+      ...survey,
+      id: generateUUID(),
+      createdAt: new Date().toISOString(),
+    };
+
+    if (!useLocalStorage) {
+      supabase
+        .from('pre_surveys')
+        .insert(mapPreSurveyToDb(created))
+        .then(({ error }: any) => {
+          if (error) console.error('Supabase addPreSurvey error:', error);
+        });
+      setPreSurveys((prev) => [created, ...prev]);
+    } else {
+      const updated = [created, ...preSurveys];
+      localStorage.setItem('mice_pre_surveys', JSON.stringify(updated));
+      setPreSurveys(updated);
+      channel.postMessage('SYNC_DATA');
+    }
+    return created;
+  };
+
+  const toggleQnaReviewed = (id: string) => {
+    const target = preQnas.find((q) => q.id === id);
+    if (!target) return;
+
+    const updatedQna: PreQna = {
+      ...target,
+      isReviewed: !target.isReviewed,
+    };
+
+    if (!useLocalStorage) {
+      supabase
+        .from('pre_qnas')
+        .update({ is_reviewed: updatedQna.isReviewed })
+        .eq('id', id)
+        .then(({ error }: any) => {
+          if (error) console.error('Supabase update preQna error:', error);
+        });
+      setPreQnas((prev) => prev.map((q) => (q.id === id ? updatedQna : q)));
+    } else {
+      const updated = preQnas.map((q) => (q.id === id ? updatedQna : q));
+      localStorage.setItem('mice_pre_qnas', JSON.stringify(updated));
+      setPreQnas(updated);
+      channel.postMessage('SYNC_DATA');
+    }
+  };
+
+  const clearPortalData = () => {
+    if (!useLocalStorage) {
+      Promise.all([
+        supabase.from('pre_qnas').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        supabase.from('pre_surveys').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+      ]).then(([qnaRes, surveyRes]: [any, any]) => {
+        if (qnaRes.error) console.error('Supabase clear pre_qnas error:', qnaRes.error);
+        if (surveyRes.error) console.error('Supabase clear pre_surveys error:', surveyRes.error);
+      });
+      setPreQnas([]);
+      setPreSurveys([]);
+    } else {
+      localStorage.removeItem('mice_pre_qnas');
+      localStorage.removeItem('mice_pre_surveys');
+      setPreQnas([]);
+      setPreSurveys([]);
+      channel.postMessage('SYNC_DATA');
+    }
+  };
 
   return (
     <AttendeeContext.Provider value={{
       attendees,
       printLogs,
+      preQnas,
+      preSurveys,
       isLoading,
       dbError,
       deskId,
@@ -868,7 +1114,11 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       importAttendees,
       printAttendee,
       clearAllData,
-      generateDummyData
+      generateDummyData,
+      addPreQna,
+      addPreSurvey,
+      toggleQnaReviewed,
+      clearPortalData
     }}>
       {children}
     </AttendeeContext.Provider>

@@ -9,15 +9,17 @@ import { IdCardTemplate } from './components/IdCardTemplate';
 import { SettingsPanel } from './components/SettingsPanel';
 import { PublicRegister } from './components/PublicRegister';
 import { LoginGate } from './components/LoginGate';
+import { MobilePortal } from './components/MobilePortal';
+import { PortalAdmin } from './components/PortalAdmin';
 import type { Attendee } from './types';
-import { LayoutDashboard, QrCode, UserPlus, MessageSquare, Database, Sparkles, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, QrCode, UserPlus, MessageSquare, Database, Sparkles, Settings, LogOut, ClipboardList } from 'lucide-react';
 import './App.css';
 
 const MainApp: React.FC = () => {
   const { deskId, userRole, logout } = useAttendees();
   
   // 일반 데스크 로그인 시 기본 탭을 스캐너로 지정
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'scanner' | 'register' | 'sms' | 'list' | 'settings'>('scanner');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'scanner' | 'register' | 'sms' | 'list' | 'settings' | 'portal-admin'>('scanner');
 
   // 권한에 따른 탭 Fallback 처리
   React.useEffect(() => {
@@ -126,6 +128,15 @@ const MainApp: React.FC = () => {
               설정 및 기기세팅
             </button>
           )}
+          {userRole === 'admin' && (
+            <button 
+              style={activeTab === 'portal-admin' ? activeTabBtnStyle : tabBtnStyle} 
+              onClick={() => setActiveTab('portal-admin')}
+            >
+              <ClipboardList size={16} />
+              사전 질문/설문 관리
+            </button>
+          )}
         </nav>
       </div>
 
@@ -145,6 +156,7 @@ const MainApp: React.FC = () => {
         {activeTab === 'sms' && <SmsSimulator />}
         {activeTab === 'list' && <AttendeeList onPrintTrigger={triggerPrint} />}
         {activeTab === 'settings' && <SettingsPanel />}
+        {activeTab === 'portal-admin' && <PortalAdmin />}
       </main>
 
       {/* 실제 인쇄 시에만 활성화되어 인쇄 드라이버로 보내지는 숨김 레이아웃 */}
@@ -157,17 +169,23 @@ const MainApp: React.FC = () => {
 
 export const App: React.FC = () => {
   const searchParams = new URLSearchParams(window.location.search);
-  const isPublicRegister = searchParams.get('view') === 'public-register';
+  const view = searchParams.get('view');
+  const isPublicRegister = view === 'public-register';
+  const isPortal = view === 'portal';
 
   return (
     <AttendeeProvider>
-      <AppContent isPublicRegister={isPublicRegister} />
+      <AppContent isPublicRegister={isPublicRegister} isPortal={isPortal} />
     </AttendeeProvider>
   );
 };
 
-const AppContent: React.FC<{ isPublicRegister: boolean }> = ({ isPublicRegister }) => {
+const AppContent: React.FC<{ isPublicRegister: boolean; isPortal: boolean }> = ({ isPublicRegister, isPortal }) => {
   const { isLoggedIn } = useAttendees();
+
+  if (isPortal) {
+    return <MobilePortal />;
+  }
 
   if (isPublicRegister) {
     return <PublicRegister />;
