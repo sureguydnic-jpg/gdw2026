@@ -105,7 +105,7 @@ export const MobilePortal: React.FC = () => {
           {/* 로고 및 행사 타이틀 */}
           <div style={logoWrapper}>
             <div style={sparkleIcon}>
-              <Sparkles size={24} color="#a78bfa" />
+              <Sparkles size={24} color="#34d399" />
             </div>
             <div style={eventSubtitle}>GOYANG DESTINATION WEEK 2026</div>
             <h1 style={eventTitle}>고양 데스티네이션 위크</h1>
@@ -114,11 +114,11 @@ export const MobilePortal: React.FC = () => {
           {/* 행사 요약 카드 */}
           <div className="glass" style={eventSummaryCard}>
             <div style={summaryRow}>
-              <Calendar size={16} color="#c084fc" />
+              <Calendar size={16} color="#34d399" />
               <span style={summaryText}>2026. 08. 26(수) - 08. 29(토)</span>
             </div>
             <div style={{ ...summaryRow, marginTop: '8px' }}>
-              <MapPin size={16} color="#c084fc" />
+              <MapPin size={16} color="#34d399" />
               <span style={summaryText}>고양꽃전시장</span>
             </div>
           </div>
@@ -132,7 +132,7 @@ export const MobilePortal: React.FC = () => {
               style={menuBtnStyle}
               onClick={() => window.open('https://www.goyangdestinationweek.com/event/62cf8e72-93b9-42fe-be0e-5158842651e0/Home', '_blank')}
             >
-              <div style={{ ...btnIconWrapper, background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' }}>
+              <div style={{ ...btnIconWrapper, background: 'linear-gradient(135deg, #0f766e 0%, #115e59 100%)' }}>
                 <Globe size={24} color="#ffffff" />
               </div>
               <span style={btnLabelStyle}>Website (공식 웹사이트)</span>
@@ -144,7 +144,7 @@ export const MobilePortal: React.FC = () => {
               style={menuBtnStyle}
               onClick={() => window.open('https://goyangdestinationweek.com/ebook', '_blank')}
             >
-              <div style={{ ...btnIconWrapper, background: 'linear-gradient(135deg, #10b981 0%, #047857 100%)' }}>
+              <div style={{ ...btnIconWrapper, background: 'linear-gradient(135deg, #059669 0%, #064e3b 100%)' }}>
                 <BookOpen size={24} color="#ffffff" />
               </div>
               <span style={btnLabelStyle}>E-Book (자료집)</span>
@@ -156,7 +156,7 @@ export const MobilePortal: React.FC = () => {
               style={menuBtnStyle}
               onClick={() => setActiveView('qna')}
             >
-              <div style={{ ...btnIconWrapper, background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)' }}>
+              <div style={{ ...btnIconWrapper, background: 'linear-gradient(135deg, #10b981 0%, #047857 100%)' }}>
                 <MessageSquare size={24} color="#ffffff" />
               </div>
               <span style={btnLabelStyle}>Pre-Q&A (사전 질문)</span>
@@ -168,7 +168,7 @@ export const MobilePortal: React.FC = () => {
               style={menuBtnStyle}
               onClick={() => setActiveView('survey')}
             >
-              <div style={{ ...btnIconWrapper, background: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)' }}>
+              <div style={{ ...btnIconWrapper, background: 'linear-gradient(135deg, #34d399 0%, #065f46 100%)' }}>
                 <ClipboardList size={24} color="#ffffff" />
               </div>
               <span style={btnLabelStyle}>Survey (설문조사)</span>
@@ -242,7 +242,7 @@ export const MobilePortal: React.FC = () => {
                 />
               </div>
 
-              <button type="submit" style={submitBtnStyle('#8b5cf6')}>
+              <button type="submit" style={submitBtnStyle('#10b981')}>
                 질문 제출하기
               </button>
             </form>
@@ -363,7 +363,7 @@ export const MobilePortal: React.FC = () => {
                 />
               </div>
 
-              <button type="submit" style={submitBtnStyle('#ec4899')}>
+              <button type="submit" style={submitBtnStyle('#10b981')}>
                 설문 제출 완료
               </button>
             </form>
@@ -380,7 +380,7 @@ export const MobilePortal: React.FC = () => {
 const containerStyle: React.CSSProperties = {
   minHeight: '100vh',
   width: '100%',
-  backgroundColor: '#0a0b10', // 다크 배경
+  backgroundColor: '#0a0f0d', // 다크 그린/블랙 배경 적용
   color: '#f3f4f6',
   display: 'flex',
   flexDirection: 'column',
@@ -396,7 +396,7 @@ const bgGlowLeft: React.CSSProperties = {
   left: '-20%',
   width: '70vw',
   height: '70vw',
-  background: 'radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(0,0,0,0) 70%)',
+  background: 'radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, rgba(0,0,0,0) 70%)',
   pointerEvents: 'none',
 };
 
@@ -406,7 +406,7 @@ const bgGlowRight: React.CSSProperties = {
   right: '-30%',
   width: '80vw',
   height: '80vw',
-  background: 'radial-gradient(circle, rgba(236, 72, 153, 0.12) 0%, rgba(0,0,0,0) 70%)',
+  background: 'radial-gradient(circle, rgba(52, 211, 153, 0.12) 0%, rgba(0,0,0,0) 70%)',
   pointerEvents: 'none',
 };
 
@@ -431,7 +431,7 @@ const sparkleIcon: React.CSSProperties = {
   display: 'inline-flex',
   justifyContent: 'center',
   alignItems: 'center',
-  backgroundColor: 'rgba(167, 139, 250, 0.1)',
+  backgroundColor: 'rgba(16, 185, 129, 0.1)',
   padding: '0.6rem',
   borderRadius: '50%',
   marginBottom: '0.8rem',
@@ -441,7 +441,7 @@ const eventSubtitle: React.CSSProperties = {
   fontSize: '0.7rem',
   fontWeight: '700',
   letterSpacing: '2px',
-  color: '#a78bfa',
+  color: '#34d399',
   textTransform: 'uppercase',
 };
 
@@ -572,13 +572,13 @@ const formStyle: React.CSSProperties = {
 };
 
 const formInfoBox: React.CSSProperties = {
-  backgroundColor: 'rgba(167, 139, 250, 0.06)',
-  border: '1px solid rgba(167, 139, 250, 0.15)',
+  backgroundColor: 'rgba(16, 185, 129, 0.06)',
+  border: '1px solid rgba(16, 185, 129, 0.15)',
   padding: '1rem',
   borderRadius: '12px',
   fontSize: '0.78rem',
   lineHeight: '1.5',
-  color: '#c084fc',
+  color: '#34d399',
   marginBottom: '0.5rem',
 };
 
@@ -693,8 +693,8 @@ const satisfactionGroup: React.CSSProperties = {
 
 const satisfactionChipStyle = (selected: boolean): React.CSSProperties => ({
   flex: 1,
-  backgroundColor: selected ? '#ec4899' : 'rgba(255, 255, 255, 0.04)',
-  border: selected ? '1px solid #ec4899' : '1px solid rgba(255, 255, 255, 0.08)',
+  backgroundColor: selected ? '#10b981' : 'rgba(255, 255, 255, 0.04)',
+  border: selected ? '1px solid #10b981' : '1px solid rgba(255, 255, 255, 0.08)',
   color: selected ? '#ffffff' : '#cbd5e1',
   padding: '0.7rem 0',
   borderRadius: '10px',
@@ -712,9 +712,9 @@ const interestGroup: React.CSSProperties = {
 };
 
 const interestChipStyle = (selected: boolean): React.CSSProperties => ({
-  backgroundColor: selected ? 'rgba(236, 72, 153, 0.1)' : 'rgba(255, 255, 255, 0.03)',
-  border: selected ? '1px solid #ec4899' : '1px solid rgba(255, 255, 255, 0.06)',
-  color: selected ? '#f472b6' : '#cbd5e1',
+  backgroundColor: selected ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 255, 255, 0.03)',
+  border: selected ? '1px solid #10b981' : '1px solid rgba(255, 255, 255, 0.06)',
+  color: selected ? '#34d399' : '#cbd5e1',
   padding: '0.8rem 1rem',
   borderRadius: '12px',
   fontSize: '0.8rem',
