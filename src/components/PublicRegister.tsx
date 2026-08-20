@@ -266,26 +266,26 @@ export const PublicRegister: React.FC = () => {
 
             {/* 1. 이름 */}
             {nationality === 'Domestic' ? (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
                 <div style={formGroupStyle}>
-                  <label style={labelStyle}>영문이름 (English Name)</label>
+                  <label style={labelStyle}>국문이름 (Korean Name) *필수*</label>
                   <input 
                     type="text" 
-                    placeholder="Gildong Hong (또는 Hong Gildong)" 
-                    value={nameEn} 
-                    onChange={(e) => setNameEn(e.target.value)}
-                    style={inputStyle}
-                  />
-                </div>
-                <div style={formGroupStyle}>
-                  <label style={labelStyle}>국문이름 (Korean Name)</label>
-                  <input 
-                    type="text" 
-                    placeholder="홍길동" 
+                    placeholder="예: 홍길동" 
                     value={nameKr} 
                     onChange={(e) => setNameKr(e.target.value)}
                     style={inputStyle}
                     required
+                  />
+                </div>
+                <div style={formGroupStyle}>
+                  <label style={labelStyle}>영문이름 (English Name)</label>
+                  <input 
+                    type="text" 
+                    placeholder="예: Gildong Hong (또는 Hong Gildong)" 
+                    value={nameEn} 
+                    onChange={(e) => setNameEn(e.target.value)}
+                    style={inputStyle}
                   />
                 </div>
               </div>
@@ -303,63 +303,26 @@ export const PublicRegister: React.FC = () => {
               </div>
             )}
 
-            {/* 2. 직급 */}
+            {/* 2. 소속 */}
             {nationality === 'Domestic' ? (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
-                <div style={formGroupStyle}>
-                  <label style={labelStyle}>영문직급 (English Title)</label>
-                  <input 
-                    type="text" 
-                    placeholder="Manager / Team Lead" 
-                    value={positionEn} 
-                    onChange={(e) => setPositionEn(e.target.value)}
-                    style={inputStyle}
-                  />
-                </div>
-                <div style={formGroupStyle}>
-                  <label style={labelStyle}>국문직급 (Korean Title)</label>
-                  <input 
-                    type="text" 
-                    placeholder="팀장 / 매니저" 
-                    value={positionKr} 
-                    onChange={(e) => setPositionKr(e.target.value)}
-                    style={inputStyle}
-                  />
-                </div>
-              </div>
-            ) : (
-              <div style={formGroupStyle}>
-                <label style={labelStyle}>영문직급 (English Title)</label>
-                <input 
-                  type="text" 
-                  placeholder="Managing Director / CEO" 
-                  value={positionEn} 
-                  onChange={(e) => setPositionEn(e.target.value)}
-                  style={inputStyle}
-                />
-              </div>
-            )}
-
-            {/* 3. 소속 */}
-            {nationality === 'Domestic' ? (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
-                <div style={formGroupStyle}>
-                  <label style={labelStyle}>영문소속 (English Org)</label>
-                  <input 
-                    type="text" 
-                    placeholder="Global MICE Corp" 
-                    value={organizationEn} 
-                    onChange={(e) => setOrganizationEn(e.target.value)}
-                    style={inputStyle}
-                  />
-                </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
                 <div style={formGroupStyle}>
                   <label style={labelStyle}>국문소속 (Korean Org)</label>
                   <input 
                     type="text" 
-                    placeholder="한국컨벤션센터" 
+                    placeholder="예: 한국컨벤션센터" 
                     value={organizationKr} 
                     onChange={(e) => setOrganizationKr(e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+                <div style={formGroupStyle}>
+                  <label style={labelStyle}>영문소속 (English Org)</label>
+                  <input 
+                    type="text" 
+                    placeholder="예: Global MICE Corp" 
+                    value={organizationEn} 
+                    onChange={(e) => setOrganizationEn(e.target.value)}
                     style={inputStyle}
                   />
                 </div>
@@ -372,6 +335,43 @@ export const PublicRegister: React.FC = () => {
                   placeholder="World Event Federation" 
                   value={organizationEn} 
                   onChange={(e) => setOrganizationEn(e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+            )}
+
+            {/* 3. 직급 */}
+            {nationality === 'Domestic' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                <div style={formGroupStyle}>
+                  <label style={labelStyle}>국문직급 (Korean Title)</label>
+                  <input 
+                    type="text" 
+                    placeholder="예: 팀장 / 매니저" 
+                    value={positionKr} 
+                    onChange={(e) => setPositionKr(e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+                <div style={formGroupStyle}>
+                  <label style={labelStyle}>영문직급 (English Title)</label>
+                  <input 
+                    type="text" 
+                    placeholder="예: Manager / Team Lead" 
+                    value={positionEn} 
+                    onChange={(e) => setPositionEn(e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div style={formGroupStyle}>
+                <label style={labelStyle}>영문직급 (English Title)</label>
+                <input 
+                  type="text" 
+                  placeholder="Managing Director / CEO" 
+                  value={positionEn} 
+                  onChange={(e) => setPositionEn(e.target.value)}
                   style={inputStyle}
                 />
               </div>
