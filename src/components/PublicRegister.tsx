@@ -6,9 +6,14 @@ import { Sparkles, CheckCircle, Shield, Phone, Mail, Award, ArrowLeft, Loader2 }
 export const PublicRegister: React.FC = () => {
   const { addAttendee, attendees, isLoading, dbError } = useAttendees();
   
-  const [name, setName] = useState('');
-  const [organization, setOrganization] = useState('');
-  const [position, setPosition] = useState('');
+  const [nationality, setNationality] = useState<'Domestic' | 'Foreign'>('Domestic');
+  const [nameEn, setNameEn] = useState('');
+  const [nameKr, setNameKr] = useState('');
+  const [organizationEn, setOrganizationEn] = useState('');
+  const [organizationKr, setOrganizationKr] = useState('');
+  const [positionEn, setPositionEn] = useState('');
+  const [positionKr, setPositionKr] = useState('');
+  const [type, setType] = useState('Participant');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [privacyAgree, setPrivacyAgree] = useState(false);
@@ -32,8 +37,20 @@ export const PublicRegister: React.FC = () => {
   const handleRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name.trim() || !organization.trim() || !position.trim() || !phone.trim() || !email.trim()) {
-      alert('모든 입력 항목을 기입해 주세요.');
+    const isForeign = nationality === 'Foreign';
+
+    if (isForeign && !nameEn.trim()) {
+      alert('영문 이름(English Name)을 기입해 주세요.');
+      return;
+    }
+
+    if (!isForeign && !nameKr.trim() && !nameEn.trim()) {
+      alert('성명(영문 또는 국문)을 기입해 주세요.');
+      return;
+    }
+
+    if (!phone.trim() || !email.trim()) {
+      alert('연락처와 이메일 주소를 기입해 주세요.');
       return;
     }
 
@@ -48,24 +65,42 @@ export const PublicRegister: React.FC = () => {
       return;
     }
 
-    const phoneRegex = /^[0-9+-\s]+$/;
-    if (!phoneRegex.test(phone.trim())) {
-      alert('올바른 연락처 형식을 입력해 주세요.');
+    const phoneDigits = phone.trim().replace(/[\s\-\+\(\)]/g, '');
+    if (!/^\d{7,15}$/.test(phoneDigits)) {
+      alert('올바른 연락처 형식을 입력해 주세요. (예: 010-1234-5678)');
       return;
     }
 
-    // 본 행사 시작일 (2026-08-26 KST) 기준 이전이면 '사전', 당일부터는 '현장'으로 구분
     const eventStartDate = new Date('2026-08-26T00:00:00+09:00');
     const now = new Date();
     const regType = now < eventStartDate ? '사전' : '현장';
 
+    const primaryName = !isForeign && nameEn.trim() && nameKr.trim() 
+      ? `${nameEn.trim()} (${nameKr.trim()})` 
+      : (nameEn.trim() || nameKr.trim());
+
+    const primaryPosition = !isForeign && positionEn.trim() && positionKr.trim()
+      ? `${positionEn.trim()} / ${positionKr.trim()}`
+      : (positionEn.trim() || positionKr.trim());
+
+    const primaryOrg = !isForeign && organizationEn.trim() && organizationKr.trim()
+      ? `${organizationEn.trim()} / ${organizationKr.trim()}`
+      : (organizationEn.trim() || organizationKr.trim());
+
     const created = addAttendee({
-      name: name.trim(),
-      organization: organization.trim(),
-      position: position.trim(),
+      nationality: nationality,
+      name: primaryName,
+      nameEn: nameEn.trim() || undefined,
+      nameKr: !isForeign && nameKr.trim() ? nameKr.trim() : undefined,
+      organization: primaryOrg,
+      organizationEn: organizationEn.trim() || undefined,
+      organizationKr: !isForeign && organizationKr.trim() ? organizationKr.trim() : undefined,
+      position: primaryPosition,
+      positionEn: positionEn.trim() || undefined,
+      positionKr: !isForeign && positionKr.trim() ? positionKr.trim() : undefined,
       phone: phone.trim(),
       email: email.trim(),
-      type: '일반',
+      type: type,
       privacyAgree: true,
       registeredType: regType
     });
@@ -75,16 +110,19 @@ export const PublicRegister: React.FC = () => {
   };
 
   const handleResetForm = () => {
-    setName('');
-    setOrganization('');
-    setPosition('');
+    setNameEn('');
+    setNameKr('');
+    setOrganizationEn('');
+    setOrganizationKr('');
+    setPositionEn('');
+    setPositionKr('');
+    setType('Participant');
     setPhone('');
     setEmail('');
     setPrivacyAgree(false);
     setStep('form');
     setRegisteredAttendee(null);
 
-    // URL에서 code 파라미터 제거하여 등록 폼으로 복귀
     const url = new URL(window.location.href);
     url.searchParams.delete('code');
     window.history.replaceState({}, '', url.toString());
@@ -170,45 +208,174 @@ export const PublicRegister: React.FC = () => {
             <div style={formDescBox}>
               <p>행사장에 방문해 주셔서 감사합니다.</p>
               <p style={{ marginTop: '0.2rem', color: 'var(--text-secondary)' }}>
-                아래 인적사항을 작성하시면 모바일 입장권이 즉시 발급됩니다.
+                아래 인적사항을 작성하시면 현장 ID카드(명찰) 발급이 가능합니다.
               </p>
             </div>
 
-            <div style={formGroupStyle}>
-              <label style={labelStyle}>성명 (Name)</label>
-              <input 
-                type="text" 
-                placeholder="홍길동 (또는 영문명)" 
-                value={name} 
-                onChange={(e) => setName(e.target.value)}
-                style={inputStyle}
-                required
-              />
+            {/* 내국인 / 외국인 선택 탭 */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', backgroundColor: 'rgba(0,0,0,0.2)', padding: '0.3rem', borderRadius: '8px' }}>
+              <button
+                type="button"
+                style={{
+                  padding: '0.6rem',
+                  fontSize: '0.85rem',
+                  fontWeight: '700',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: nationality === 'Domestic' ? 'var(--accent)' : 'transparent',
+                  color: nationality === 'Domestic' ? '#ffffff' : 'var(--text-secondary)',
+                  cursor: 'pointer'
+                }}
+                onClick={() => setNationality('Domestic')}
+              >
+                🇰🇷 내국인 (Domestic)
+              </button>
+              <button
+                type="button"
+                style={{
+                  padding: '0.6rem',
+                  fontSize: '0.85rem',
+                  fontWeight: '700',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: nationality === 'Foreign' ? 'var(--accent)' : 'transparent',
+                  color: nationality === 'Foreign' ? '#ffffff' : 'var(--text-secondary)',
+                  cursor: 'pointer'
+                }}
+                onClick={() => setNationality('Foreign')}
+              >
+                🌐 외국인 (Foreign)
+              </button>
             </div>
 
             <div style={formGroupStyle}>
-              <label style={labelStyle}>소속 기관 / 회사명 (Organization)</label>
-              <input 
-                type="text" 
-                placeholder="예: 고양시청, 킨텍스, 한국MICE협회" 
-                value={organization} 
-                onChange={(e) => setOrganization(e.target.value)}
+              <label style={labelStyle}>참가자 구분 (Category)</label>
+              <select 
+                value={type} 
+                onChange={(e) => setType(e.target.value)}
                 style={inputStyle}
-                required
-              />
+              >
+                <option value="Participant">Participant (일반)</option>
+                <option value="Organizer">Organizer (주최자)</option>
+                <option value="VIP">VIP</option>
+                <option value="Speaker">Speaker (연사)</option>
+                <option value="Staff">Staff (스태프)</option>
+                <option value="Press">Press (기자)</option>
+              </select>
             </div>
 
-            <div style={formGroupStyle}>
-              <label style={labelStyle}>직책 (Position)</label>
-              <input 
-                type="text" 
-                placeholder="예: 팀장, 연구원, 과장, 대표 등" 
-                value={position} 
-                onChange={(e) => setPosition(e.target.value)}
-                style={inputStyle}
-                required
-              />
-            </div>
+            {/* 1. 이름 */}
+            {nationality === 'Domestic' ? (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
+                <div style={formGroupStyle}>
+                  <label style={labelStyle}>영문이름 (English Name)</label>
+                  <input 
+                    type="text" 
+                    placeholder="Gildong Hong (또는 Hong Gildong)" 
+                    value={nameEn} 
+                    onChange={(e) => setNameEn(e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+                <div style={formGroupStyle}>
+                  <label style={labelStyle}>국문이름 (Korean Name)</label>
+                  <input 
+                    type="text" 
+                    placeholder="홍길동" 
+                    value={nameKr} 
+                    onChange={(e) => setNameKr(e.target.value)}
+                    style={inputStyle}
+                    required
+                  />
+                </div>
+              </div>
+            ) : (
+              <div style={formGroupStyle}>
+                <label style={labelStyle}>영문성명 (Full English Name) *필수*</label>
+                <input 
+                  type="text" 
+                  placeholder="John Doe (또는 Jane Doe)" 
+                  value={nameEn} 
+                  onChange={(e) => setNameEn(e.target.value)}
+                  style={inputStyle}
+                  required
+                />
+              </div>
+            )}
+
+            {/* 2. 직급 */}
+            {nationality === 'Domestic' ? (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
+                <div style={formGroupStyle}>
+                  <label style={labelStyle}>영문직급 (English Title)</label>
+                  <input 
+                    type="text" 
+                    placeholder="Manager / Team Lead" 
+                    value={positionEn} 
+                    onChange={(e) => setPositionEn(e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+                <div style={formGroupStyle}>
+                  <label style={labelStyle}>국문직급 (Korean Title)</label>
+                  <input 
+                    type="text" 
+                    placeholder="팀장 / 매니저" 
+                    value={positionKr} 
+                    onChange={(e) => setPositionKr(e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div style={formGroupStyle}>
+                <label style={labelStyle}>영문직급 (English Title)</label>
+                <input 
+                  type="text" 
+                  placeholder="Managing Director / CEO" 
+                  value={positionEn} 
+                  onChange={(e) => setPositionEn(e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+            )}
+
+            {/* 3. 소속 */}
+            {nationality === 'Domestic' ? (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
+                <div style={formGroupStyle}>
+                  <label style={labelStyle}>영문소속 (English Org)</label>
+                  <input 
+                    type="text" 
+                    placeholder="Global MICE Corp" 
+                    value={organizationEn} 
+                    onChange={(e) => setOrganizationEn(e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+                <div style={formGroupStyle}>
+                  <label style={labelStyle}>국문소속 (Korean Org)</label>
+                  <input 
+                    type="text" 
+                    placeholder="한국컨벤션센터" 
+                    value={organizationKr} 
+                    onChange={(e) => setOrganizationKr(e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div style={formGroupStyle}>
+                <label style={labelStyle}>영문소속 (English Organization)</label>
+                <input 
+                  type="text" 
+                  placeholder="World Event Federation" 
+                  value={organizationEn} 
+                  onChange={(e) => setOrganizationEn(e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+            )}
 
             <div style={formGroupStyle}>
               <label style={labelStyle}>연락처 (Phone)</label>
@@ -216,7 +383,7 @@ export const PublicRegister: React.FC = () => {
                 <Phone size={14} style={inputIcon} />
                 <input 
                   type="tel" 
-                  placeholder="예: 010-1234-5678" 
+                  placeholder="예: 010-0000-0000" 
                   value={phone} 
                   onChange={(e) => setPhone(e.target.value)}
                   style={inputWithIconStyle}
@@ -231,7 +398,7 @@ export const PublicRegister: React.FC = () => {
                 <Mail size={14} style={inputIcon} />
                 <input 
                   type="email" 
-                  placeholder="example@gdw.com" 
+                  placeholder="user@example.com" 
                   value={email} 
                   onChange={(e) => setEmail(e.target.value)}
                   style={inputWithIconStyle}
@@ -271,7 +438,7 @@ export const PublicRegister: React.FC = () => {
             </div>
 
             <button type="submit" style={btnSubmitStyle}>
-              현장 모바일 등록 완료 & 입장권 받기
+              현장 등록 완료 & ID카드(명찰) 발급하기
             </button>
           </form>
         ) : (
@@ -281,7 +448,27 @@ export const PublicRegister: React.FC = () => {
               <h2 style={successTitle}>
                 {registeredAttendee?.registeredType === '사전' ? '사전 등록 확인' : '현장 등록 완료!'}
               </h2>
-              <p style={successDesc}>입장용 모바일 QR 티켓이 정상적으로 발급되었습니다.</p>
+              <p style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--text-primary)', marginTop: '0.4rem' }}>
+                ID카드(명찰) 발급용 QR코드 및 등록 정보입니다.
+              </p>
+              <p style={{ fontSize: '0.82rem', color: 'var(--accent)', marginTop: '0.3rem', fontWeight: '600', lineHeight: 1.4 }}>
+                입장 데스크의 바코드 스캐너에 위 QR코드를 비추시면 명찰이 자동으로 즉시 인쇄됩니다.
+              </p>
+            </div>
+
+            <div style={{
+              backgroundColor: 'rgba(16, 185, 129, 0.12)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              borderRadius: '8px',
+              padding: '0.75rem 0.9rem',
+              margin: '0.8rem 0 1.2rem 0',
+              fontSize: '0.78rem',
+              color: 'var(--text-primary)',
+              textAlign: 'center',
+              lineHeight: 1.45
+            }}>
+              💡 <strong>[스마트폰 화면 캡처 권장]</strong><br />
+              현재 화면을 미리 스크린샷해 두시면, 현장 입장 데스크에서 더욱 빠르고 간편하게 명찰을 발급받으실 수 있습니다.
             </div>
 
             {registeredAttendee && (
@@ -517,12 +704,6 @@ const successTitle: React.CSSProperties = {
   fontSize: '1.3rem',
   fontWeight: '800',
   color: 'var(--accent)',
-};
-
-const successDesc: React.CSSProperties = {
-  fontSize: '0.75rem',
-  color: 'var(--text-secondary)',
-  marginTop: '2px',
 };
 
 const ticketCardStyle: React.CSSProperties = {

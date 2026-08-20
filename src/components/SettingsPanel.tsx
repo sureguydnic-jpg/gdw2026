@@ -14,6 +14,9 @@ export const SettingsPanel: React.FC = () => {
     generateDummyData 
   } = useAttendees();
 
+  // 미리보기 모드 상태 (내국인 홍길동 vs 외국인 John Doe)
+  const [previewMode, setPreviewMode] = useState<'Domestic' | 'Foreign'>('Domestic');
+
   // 입력 필드 상태
   const [widthInput, setWidthInput] = useState(String(settings.pageWidth));
   const [heightInput, setHeightInput] = useState(String(settings.pageHeight));
@@ -48,14 +51,35 @@ export const SettingsPanel: React.FC = () => {
     alert(`명찰 용지 규격이 가로 ${w}mm, 세로 ${h}mm로 변경 및 인쇄 엔진에 반영되었습니다.`);
   };
 
-  // 실시간 미리보기를 위한 가상 참가자 데이터
-  const previewAttendee: Attendee = {
+  // 실시간 미리보기를 위한 가상 참가자 데이터 (홍길동 & John Doe)
+  const previewAttendee: Attendee = previewMode === 'Domestic' ? {
     id: 'preview-1',
     code: '99999',
-    type: 'VIP',
-    organization: '고양시 킨텍스(KINTEX) 디자인팀',
-    position: '수석연구원',
-    name: '김고양',
+    nationality: 'Domestic',
+    type: 'Organizer',
+    name: 'Gildong Hong (홍길동)',
+    nameEn: 'Gildong Hong',
+    nameKr: '홍길동',
+    position: 'Manager / 팀장',
+    positionEn: 'Manager',
+    positionKr: '팀장',
+    organization: 'Global MICE Corp / 한국컨벤션센터',
+    organizationEn: 'Global MICE Corp',
+    organizationKr: '한국컨벤션센터',
+    isAttended: false,
+    registeredType: '사전',
+    printedCount: 0
+  } : {
+    id: 'preview-2',
+    code: '88888',
+    nationality: 'Foreign',
+    type: 'Speaker',
+    name: 'John Doe',
+    nameEn: 'John Doe',
+    position: 'Chief Executive Officer',
+    positionEn: 'Chief Executive Officer',
+    organization: 'World Event Federation',
+    organizationEn: 'World Event Federation',
     isAttended: false,
     registeredType: '사전',
     printedCount: 0
@@ -105,10 +129,12 @@ export const SettingsPanel: React.FC = () => {
             <form onSubmit={handleSaveSettings} style={formStyle}>
               <div style={inlineFormRow}>
                 <div style={{ ...formGroupStyle, flex: 1 }}>
-                  <label style={labelStyle}>가로 크기 (Width, mm)</label>
+                  <label style={labelStyle}>용지 가로 (Width, mm)</label>
                   <input 
                     type="number" 
-                    step="0.5"
+                    step="1"
+                    min="40"
+                    max="150"
                     value={widthInput} 
                     onChange={(e) => setWidthInput(e.target.value)}
                     style={inputStyle}
@@ -116,10 +142,12 @@ export const SettingsPanel: React.FC = () => {
                   />
                 </div>
                 <div style={{ ...formGroupStyle, flex: 1 }}>
-                  <label style={labelStyle}>세로 크기 (Height, mm)</label>
+                  <label style={labelStyle}>용지 세로 (Height, mm)</label>
                   <input 
                     type="number" 
-                    step="0.5"
+                    step="1"
+                    min="30"
+                    max="120"
                     value={heightInput} 
                     onChange={(e) => setHeightInput(e.target.value)}
                     style={inputStyle}
@@ -135,19 +163,19 @@ export const SettingsPanel: React.FC = () => {
 
               <button type="submit" style={btnSubmitStyle}>
                 <Sliders size={14} style={{ marginRight: '6px' }} />
-                용지 규격 업데이트 반영
+                용지 규격 저장 및 인쇄 엔진 동기화
               </button>
             </form>
           </div>
 
-          {/* 데이터 초기화 관리 */}
+          {/* 데이터 초기화 및 덤프 생성 버튼 */}
           <div className="glass" style={{ ...cardStyle, marginTop: '1.5rem' }}>
             <div style={panelHeaderStyle}>
-              <Trash2 size={18} style={{ color: '#f87171' }} />
-              <h3 style={panelTitleStyle}>통합 데이터베이스 관리</h3>
+              <ShieldAlert size={18} style={{ color: '#ef4444' }} />
+              <h3 style={panelTitleStyle}>시스템 데이터 관리</h3>
             </div>
             <p style={cardDesc}>
-              현장 테스트 및 초기 셋업 시 데이터를 복구하거나 전체 로그를 초기화할 수 있습니다.
+              테스트 데이터를 초기화하거나 데모용 시뮬레이션 참가자 명단을 다시 생성합니다.
             </p>
             <div style={dangerButtonGroup}>
               <button style={btnDummyStyle} onClick={generateDummyData}>
@@ -167,10 +195,8 @@ export const SettingsPanel: React.FC = () => {
 
         </div>
 
-        {/* 우측 명찰 크기 실시간 미리보기 및 모바일 QR 코드 */}
+        {/* 우측 실시간 미리보기 & QR 연동 패널 */}
         <div style={rightPanel}>
-          
-          {/* 용지 미리보기 */}
           <div className="glass" style={{ ...previewCardStyle, width: '100%' }}>
             <div style={panelHeaderStyle}>
               <Sliders size={18} style={{ color: 'var(--accent)' }} />
@@ -179,6 +205,50 @@ export const SettingsPanel: React.FC = () => {
             <p style={cardDesc}>
               현재 설정된 용지 가로/세로 규격 비율로 라벨 디자인이 어떻게 안착되는지 가상으로 미리봅니다.
             </p>
+
+            {/* 내국인 (홍길동) / 외국인 (John Doe) 미리보기 전환 탭 */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '0.5rem',
+              backgroundColor: 'rgba(0,0,0,0.2)',
+              padding: '0.3rem',
+              borderRadius: '8px',
+              margin: '0.8rem 0 1.2rem 0'
+            }}>
+              <button
+                type="button"
+                style={{
+                  padding: '0.5rem',
+                  fontSize: '0.8rem',
+                  fontWeight: '700',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: previewMode === 'Domestic' ? 'var(--accent)' : 'transparent',
+                  color: previewMode === 'Domestic' ? '#ffffff' : 'var(--text-secondary)',
+                  cursor: 'pointer'
+                }}
+                onClick={() => setPreviewMode('Domestic')}
+              >
+                🇰🇷 내국인 (홍길동) 미리보기
+              </button>
+              <button
+                type="button"
+                style={{
+                  padding: '0.5rem',
+                  fontSize: '0.8rem',
+                  fontWeight: '700',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: previewMode === 'Foreign' ? 'var(--accent)' : 'transparent',
+                  color: previewMode === 'Foreign' ? '#ffffff' : 'var(--text-secondary)',
+                  cursor: 'pointer'
+                }}
+                onClick={() => setPreviewMode('Foreign')}
+              >
+                🌐 외국인 (John Doe) 미리보기
+              </button>
+            </div>
 
             <div style={previewViewport}>
               <div 
@@ -242,37 +312,19 @@ export const SettingsPanel: React.FC = () => {
                     onClick={(e) => (e.target as HTMLInputElement).select()}
                   />
                 </div>
+                
                 <a 
-                  href={window.location.origin + '/?view=public-register'} 
+                  href="/?view=public-register" 
                   target="_blank" 
-                  rel="noopener noreferrer" 
-                  style={btnOpenLink}
+                  rel="noopener noreferrer"
+                  style={btnOpenPublicStyle}
                 >
                   <ExternalLink size={14} style={{ marginRight: '6px' }} />
-                  셀프 등록 페이지 새창 열기
+                  셀프 등록 페이지 새 창으로 열기
                 </a>
               </div>
             </div>
-
-            {/* 외부 터널링 가이드 */}
-            <div style={tunnelGuideCard}>
-              <div style={tunnelGuideHeader}>
-                <ShieldAlert size={14} style={{ color: 'var(--accent)', marginRight: '6px' }} />
-                <span style={{ fontWeight: '700' }}>외부망(LTE/5G) 스마트폰 접속 및 서비스 방법</span>
-              </div>
-              <p style={tunnelGuideDesc}>
-                현재 구동 중인 로컬 서버(localhost)는 현장 내부 네트워크용입니다. 일반 참가자의 스마트폰(LTE/5G)에서 입간판 QR을 스캔하여 모바일로 자율 등록하게 하려면 아래의 터널링 중계 명령어를 실행하세요.
-              </p>
-              <div style={codeBlockStyle}>
-                <code>npx localtunnel --port 5173</code>
-              </div>
-              <p style={tunnelGuideSubdesc}>
-                위 명령어를 새 파워쉘/터미널 창에 입력하여 실행하면 외부 공인 주소(예: <code>https://xxxx.loca.lt</code>)가 즉석 발급됩니다. 발급된 주소 뒤에 <code>/?view=public-register</code> 주소를 조합하여 현장 외부 배너용 QR코드를 인쇄하시면 완벽한 외부 인터넷 등록 서비스가 개시됩니다.
-              </p>
-            </div>
-
           </div>
-
         </div>
 
       </div>
@@ -280,17 +332,14 @@ export const SettingsPanel: React.FC = () => {
   );
 };
 
-/* ==========================================
-   CSS IN JS (SettingsPanel UI)
-   ========================================== */
 const containerStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
+  width: '100%',
+  padding: '1rem 0',
 };
 
 const gridStyle: React.CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: '1.2fr 1fr',
+  gridTemplateColumns: '1fr 1fr',
   gap: '1.5rem',
   alignItems: 'start',
 };
@@ -301,11 +350,8 @@ const leftPanel: React.CSSProperties = {
 };
 
 const rightPanel: React.CSSProperties = {
-  padding: '2rem',
-  borderRadius: '12px',
   display: 'flex',
   flexDirection: 'column',
-  alignItems: 'center',
 };
 
 const cardStyle: React.CSSProperties = {
@@ -313,17 +359,24 @@ const cardStyle: React.CSSProperties = {
   borderRadius: '12px',
 };
 
+const previewCardStyle: React.CSSProperties = {
+  padding: '1.5rem',
+  borderRadius: '12px',
+  display: 'flex',
+  flexDirection: 'column',
+};
+
 const panelHeaderStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   gap: '0.5rem',
   borderBottom: '1px solid var(--border)',
-  paddingBottom: '0.8rem',
-  marginBottom: '1rem',
+  paddingBottom: '0.75rem',
+  marginBottom: '0.75rem',
 };
 
 const panelTitleStyle: React.CSSProperties = {
-  fontSize: '0.95rem',
+  fontSize: '1rem',
   fontWeight: '600',
   color: 'var(--text-primary)',
 };
@@ -332,7 +385,18 @@ const cardDesc: React.CSSProperties = {
   fontSize: '0.8rem',
   color: 'var(--text-secondary)',
   lineHeight: '1.5',
-  marginBottom: '1.2rem',
+};
+
+const formStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '1rem',
+  marginTop: '1rem',
+};
+
+const inlineFormRow: React.CSSProperties = {
+  display: 'flex',
+  gap: '1rem',
 };
 
 const formGroupStyle: React.CSSProperties = {
@@ -342,40 +406,30 @@ const formGroupStyle: React.CSSProperties = {
 };
 
 const labelStyle: React.CSSProperties = {
-  fontSize: '0.75rem',
+  fontSize: '0.8rem',
   fontWeight: '600',
   color: 'var(--text-secondary)',
 };
 
 const selectStyle: React.CSSProperties = {
   fontSize: '0.85rem',
-  width: '100%',
-};
-
-const formStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '1rem',
-};
-
-const inlineFormRow: React.CSSProperties = {
-  display: 'flex',
-  gap: '1rem',
+  padding: '0.6rem 0.75rem',
+  marginTop: '0.4rem',
 };
 
 const inputStyle: React.CSSProperties = {
   fontSize: '0.85rem',
-  width: '100%',
+  padding: '0.6rem 0.75rem',
 };
 
 const infoBoxStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
-  backgroundColor: 'var(--accent-light)',
-  border: '1px solid rgba(16, 185, 129, 0.15)',
-  padding: '0.5rem 0.75rem',
+  backgroundColor: 'rgba(16, 185, 129, 0.08)',
+  border: '1px solid rgba(16, 185, 129, 0.2)',
+  padding: '0.6rem',
   borderRadius: '6px',
-  fontSize: '0.7rem',
+  fontSize: '0.75rem',
   color: 'var(--accent)',
   lineHeight: '1.4',
 };
@@ -383,10 +437,10 @@ const infoBoxStyle: React.CSSProperties = {
 const btnSubmitStyle: React.CSSProperties = {
   backgroundColor: 'var(--accent)',
   color: '#ffffff',
-  padding: '0.6rem 1rem',
-  fontSize: '0.85rem',
-  fontWeight: '600',
+  padding: '0.7rem',
   borderRadius: '6px',
+  fontSize: '0.85rem',
+  fontWeight: '700',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -394,18 +448,19 @@ const btnSubmitStyle: React.CSSProperties = {
 
 const dangerButtonGroup: React.CSSProperties = {
   display: 'flex',
-  gap: '1rem',
+  gap: '0.75rem',
+  marginTop: '1rem',
 };
 
 const btnDummyStyle: React.CSSProperties = {
   flex: 1,
-  backgroundColor: 'var(--bg-tertiary)',
+  backgroundColor: 'rgba(255, 255, 255, 0.05)',
   border: '1px solid var(--border)',
   color: 'var(--text-primary)',
   padding: '0.6rem',
-  fontSize: '0.75rem',
-  fontWeight: '600',
   borderRadius: '6px',
+  fontSize: '0.8rem',
+  fontWeight: '600',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -415,100 +470,81 @@ const btnDeleteStyle: React.CSSProperties = {
   flex: 1,
   backgroundColor: 'rgba(239, 68, 68, 0.1)',
   border: '1px solid rgba(239, 68, 68, 0.2)',
-  color: '#f87171',
+  color: '#ef4444',
   padding: '0.6rem',
-  fontSize: '0.75rem',
-  fontWeight: '600',
   borderRadius: '6px',
+  fontSize: '0.8rem',
+  fontWeight: '600',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
 };
 
 const previewViewport: React.CSSProperties = {
-  width: '100%',
-  minHeight: '300px',
-  backgroundColor: 'rgba(0,0,0,0.15)',
-  border: '1px dashed var(--border)',
-  borderRadius: '8px',
   display: 'flex',
+  flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
+  backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  borderRadius: '12px',
+  padding: '2.5rem 1.5rem',
   position: 'relative',
-  padding: '30px',
 };
 
 const dimensionLabelRow: React.CSSProperties = {
-  position: 'absolute',
-  inset: 0,
-  pointerEvents: 'none',
+  marginTop: '1rem',
+  display: 'flex',
+  gap: '1.5rem',
+  alignItems: 'center',
 };
 
 const widthGuide: React.CSSProperties = {
-  position: 'absolute',
-  bottom: '8px',
-  left: '30px',
-  right: '30px',
   display: 'flex',
-  justifyContent: 'space-between',
   alignItems: 'center',
-  color: 'var(--accent)',
-  fontSize: '0.75rem',
-  fontWeight: '600',
+  gap: '0.2rem',
 };
 
 const heightGuide: React.CSSProperties = {
-  position: 'absolute',
-  right: '8px',
-  top: '30px',
-  bottom: '30px',
   display: 'flex',
-  flexDirection: 'column',
-  justifyContent: 'space-between',
   alignItems: 'center',
-  color: 'var(--accent)',
-  fontSize: '0.75rem',
-  fontWeight: '600',
+  gap: '0.2rem',
 };
+
+const arrowLeft: React.CSSProperties = { fontSize: '0.7rem', color: 'var(--accent)' };
+const arrowRight: React.CSSProperties = { fontSize: '0.7rem', color: 'var(--accent)' };
+const arrowUp: React.CSSProperties = { fontSize: '0.7rem', color: 'var(--accent)' };
+const arrowDown: React.CSSProperties = { fontSize: '0.7rem', color: 'var(--accent)' };
 
 const dimensionText: React.CSSProperties = {
-  backgroundColor: 'var(--bg-primary)',
-  padding: '2px 6px',
-  border: '1px solid var(--border)',
-  borderRadius: '4px',
-};
-
-const arrowLeft: React.CSSProperties = { fontSize: '0.6rem', color: 'var(--text-muted)' };
-const arrowRight: React.CSSProperties = { fontSize: '0.6rem', color: 'var(--text-muted)' };
-const arrowUp: React.CSSProperties = { fontSize: '0.6rem', color: 'var(--text-muted)' };
-const arrowDown: React.CSSProperties = { fontSize: '0.6rem', color: 'var(--text-muted)' };
-
-const previewCardStyle: React.CSSProperties = {
-  padding: '1.5rem',
-  borderRadius: '12px',
+  fontSize: '0.75rem',
+  fontWeight: '700',
+  color: 'var(--text-primary)',
+  fontFamily: "'Outfit', monospace",
 };
 
 const qrGuideArea: React.CSSProperties = {
   display: 'flex',
   gap: '1.2rem',
   alignItems: 'center',
-  marginTop: '0.5rem',
+  marginTop: '1rem',
+  backgroundColor: 'rgba(0, 0, 0, 0.2)',
+  padding: '1rem',
+  borderRadius: '10px',
 };
 
 const qrCodeBox: React.CSSProperties = {
   backgroundColor: '#ffffff',
-  padding: '8px',
-  borderRadius: '6px',
+  padding: '0.5rem',
+  borderRadius: '8px',
   display: 'flex',
-  alignItems: 'center',
   justifyContent: 'center',
-  flexShrink: 0,
+  alignItems: 'center',
 };
 
 const qrInfoBox: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  gap: '0.8rem',
+  gap: '0.75rem',
   flex: 1,
 };
 
@@ -519,74 +555,29 @@ const urlTextContainer: React.CSSProperties = {
 };
 
 const urlLabel: React.CSSProperties = {
-  fontSize: '0.7rem',
-  fontWeight: '600',
+  fontSize: '0.75rem',
   color: 'var(--text-secondary)',
+  fontWeight: '600',
 };
 
 const urlInputStyle: React.CSSProperties = {
-  fontSize: '0.75rem',
-  padding: '0.5rem',
-  width: '100%',
-  backgroundColor: 'var(--bg-tertiary)',
-  border: '1px solid var(--border)',
-  color: 'var(--text-primary)',
-  borderRadius: '4px',
+  fontSize: '0.8rem',
+  padding: '0.5rem 0.75rem',
+  backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  color: 'var(--accent)',
+  fontWeight: '600',
   cursor: 'pointer',
 };
 
-const btnOpenLink: React.CSSProperties = {
-  backgroundColor: 'var(--bg-tertiary)',
-  border: '1px solid var(--border)',
-  color: 'var(--text-primary)',
-  padding: '0.5rem 1rem',
-  fontSize: '0.75rem',
-  fontWeight: '600',
-  borderRadius: '6px',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  textDecoration: 'none',
-  textAlign: 'center',
-};
-
-/* Localtunnel External Network Guide Styling */
-const tunnelGuideCard: React.CSSProperties = {
-  marginTop: '1.2rem',
-  padding: '0.85rem',
-  borderRadius: '6px',
-  backgroundColor: 'rgba(16, 185, 129, 0.03)',
-  border: '1px solid rgba(16, 185, 129, 0.12)',
-  fontSize: '0.72rem',
-};
-
-const tunnelGuideHeader: React.CSSProperties = {
+const btnOpenPublicStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
-  color: 'var(--accent)',
-  marginBottom: '0.4rem',
-};
-
-const tunnelGuideDesc: React.CSSProperties = {
-  color: 'var(--text-secondary)',
-  lineHeight: '1.45',
-  marginBottom: '0.6rem',
-};
-
-const codeBlockStyle: React.CSSProperties = {
-  fontFamily: 'monospace',
-  fontSize: '0.75rem',
-  padding: '0.5rem',
-  backgroundColor: 'var(--bg-primary)',
-  border: '1px solid var(--border)',
-  borderRadius: '4px',
-  color: 'var(--mint)',
-  fontWeight: '600',
-  textAlign: 'center',
-  marginBottom: '0.6rem',
-};
-
-const tunnelGuideSubdesc: React.CSSProperties = {
-  color: 'var(--text-muted)',
-  lineHeight: '1.4',
+  justifyContent: 'center',
+  backgroundColor: 'var(--accent)',
+  color: '#ffffff',
+  padding: '0.5rem 0.75rem',
+  borderRadius: '6px',
+  fontSize: '0.8rem',
+  fontWeight: '700',
+  textDecoration: 'none',
 };

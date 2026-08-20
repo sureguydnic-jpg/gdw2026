@@ -72,6 +72,16 @@
 * **환경 변수 템플릿**: API 정보를 담을 프로젝트 루트 내 `.env` 파일 구조를 구성했습니다.
 * **보안 누출 예방**: 민감한 `.env` 키값이 깃허브에 커밋되어 유출되지 않도록 `.gitignore` 파일에 환경 변수 필터링 설정을 적용했습니다.
 
+### 5. 참가자 정보 고도화 및 90x80mm 감열식 라벨 명찰 개편 (2026-08-20 작업 완료)
+* **Pretendard 폰트 전면 도입**: CDN 연동을 통해 시스템 전체 및 명찰 인쇄물에 Pretendard 웹폰트를 일관되게 전면 로드했습니다.
+* **90mm x 80mm 감열식(Thermal) 흑백 명찰 개편**:
+  - 기본 명찰 규격을 가로 90mm * 세로 80mm로 확장했습니다.
+  - 감열식 열전사 프린터 특성에 맞춘 고대비 모노크롬(흑백) 디자인을 적용하고 기존 행사명 상단 헤더를 제거했습니다.
+  - 전체 중앙 정렬(`text-align: center`)을 적용하고 영문/국문 이름(`font-weight: 850~900`, Extrabold)과 참가자 구분(`type`: Organizer, VIP, Speaker, Participant 등)을 크게 강조했습니다.
+  - 인쇄 레이아웃 순서: `1-1. 영문이름` -> `1-2. 국문이름` -> `2-1. 영문직급` -> `2-2. 국문직급` -> `3-1. 영문소속` -> `3-2. 국문소속` -> `4. 참가자 구분`.
+* **데이터 모델 고도화**:
+  - `Attendee` 타입 및 DB 스키마에 `name_en`, `name_kr`, `position_en`, `position_kr`, `org_en`, `org_kr` 컬럼 및 English Category(`Organizer`, `VIP`, `Speaker`, `Participant`, `Staff`, `Press`) 구조를 반영하고 CSV 템플릿과 대량 SMS 내보내기 열을 확장했습니다.
+
 ---
 
 ## 🚀 추후 작업 대상 및 마일스톤 (Next Steps)

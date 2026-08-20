@@ -42,7 +42,9 @@ export const Dashboard: React.FC = () => {
   });
 
   const formatTime = (isoString: string) => {
+    if (!isoString) return '--:--:--';
     const d = new Date(isoString);
+    if (isNaN(d.getTime())) return '--:--:--';
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
   };
 

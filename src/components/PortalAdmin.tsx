@@ -93,6 +93,7 @@ export const PortalAdmin: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // Export Survey to CSV
@@ -126,6 +127,7 @@ export const PortalAdmin: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // Clear portal data confirmation

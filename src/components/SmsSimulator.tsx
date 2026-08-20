@@ -46,21 +46,26 @@ export const SmsSimulator: React.FC = () => {
       return;
     }
 
-    // UTF-8 BOM과 CSV 헤더 구성 (등록코드, 티켓링크 분리 추가)
-    let csvContent = '\uFEFF수신번호,이름,소속,직책,등록코드,티켓링크,문자내용\n';
+    // UTF-8 BOM과 CSV 헤더 구성 (국적, 영문/국문 정보 및 카테고리 세분화)
+    let csvContent = '\uFEFF수신번호,국적,구분,영문이름,국문이름,영문직급,국문직급,영문소속,국문소속,등록코드,티켓링크,문자내용\n';
     
     preRegistered.forEach(att => {
       const phone = att.phone || '';
-      const name = att.name || '';
-      const org = att.organization || '';
-      const pos = att.position || '';
+      const nat = att.nationality || (att.nameKr ? 'Domestic' : 'Foreign');
+      const catType = att.type || 'Participant';
+      const nameEn = att.nameEn || att.name;
+      const nameKr = att.nameKr || '';
+      const posEn = att.positionEn || att.position || '';
+      const posKr = att.positionKr || '';
+      const orgEn = att.organizationEn || att.organization || '';
+      const orgKr = att.organizationKr || '';
       const code = att.code || '';
       
       const ticketUrl = `${window.location.origin}${window.location.pathname}?view=public-register&code=${code}`;
-      const smsText = `[GDW 2026] 안녕하세요, ${name}님. 'Goyang Destination Week 2026' 사전등록이 완료되었습니다.\n\n▶ 등록코드: ${code}\n▶ 일시: 2026년 8월 26일(수) ~ 29일(토)\n▶ 장소: 고양꽃전시장\n\n현장 등록 데스크에서 빠른 입장을 위해 아래 링크를 터치하여 모바일 QR 티켓을 제시해 주시기 바랍니다.\n링크: ${ticketUrl}`;
+      const smsText = `[GDW 2026] 안녕하세요, ${nameEn}${nameKr ? `(${nameKr})` : ''}님. Goyang Destination Week 2026 사전등록이 완료되었습니다.\n\n▶ 등록코드: ${code}\n▶ 일시: 2026년 8월 26일(수) ~ 29일(토)\n▶ 장소: 고양꽃전시장\n\n현장 등록 데스크에서 빠른 입장을 위해 아래 링크를 터치하여 모바일 QR 티켓을 제시해 주시기 바랍니다.\n링크: ${ticketUrl}`;
       
       const escape = (text: string) => `"${text.replace(/"/g, '""')}"`;
-      csvContent += `${escape(phone)},${escape(name)},${escape(org)},${escape(pos)},${escape(code)},${escape(ticketUrl)},${escape(smsText)}\n`;
+      csvContent += `${escape(phone)},${escape(nat)},${escape(catType)},${escape(nameEn)},${escape(nameKr)},${escape(posEn)},${escape(posKr)},${escape(orgEn)},${escape(orgKr)},${escape(code)},${escape(ticketUrl)},${escape(smsText)}\n`;
     });
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -71,6 +76,7 @@ export const SmsSimulator: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -94,11 +100,14 @@ export const SmsSimulator: React.FC = () => {
             style={selectStyle}
           >
             <option value="">-- 참가자 선택 --</option>
-            {attendees.filter(a => a.registeredType === '사전').map(att => (
-              <option key={att.id} value={att.id}>
-                [{att.code}] {att.name} ({att.organization} - {att.type})
-              </option>
-            ))}
+            {attendees.filter(a => a.registeredType === '사전').map(att => {
+              const isForeign = att.nationality === 'Foreign' || (!att.nationality && !att.nameKr);
+              return (
+                <option key={att.id} value={att.id}>
+                  [{att.code}] [{isForeign ? 'Foreign' : 'Domestic'}] {att.name} ({att.organization} - {att.type})
+                </option>
+              );
+            })}
           </select>
         </div>
 

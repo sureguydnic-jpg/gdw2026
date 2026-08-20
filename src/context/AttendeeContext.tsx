@@ -22,6 +22,7 @@ interface AttendeeContextType {
   preSurveys: PreSurvey[];
   isLoading: boolean;
   dbError: string | null;
+  dbStatus: 'online' | 'offline' | 'reconnecting';
   deskId: string;
   setDeskId: (id: string) => void;
   isLoggedIn: boolean;
@@ -53,12 +54,19 @@ const INITIAL_ATTENDEES: Attendee[] = [
   {
     id: '00000000-0000-0000-0000-000000000001',
     code: '10001',
-    type: 'VIP',
-    organization: '고양컨벤션뷰로',
-    position: '이사장',
-    name: '김고양',
+    nationality: 'Domestic',
+    type: 'Organizer',
+    name: 'Stella Lee (이윤희)',
+    nameEn: 'Stella Lee',
+    nameKr: '이윤희',
+    position: 'PM / 매니저',
+    positionEn: 'PM',
+    positionKr: '매니저',
+    organization: 'Goyang CVB / 고양국제박람회재단',
+    organizationEn: 'Goyang CVB',
+    organizationKr: '고양국제박람회재단',
     phone: '010-2026-1001',
-    email: 'goyang.kim@gdw.or.kr',
+    email: 'stella@gdw.or.kr',
     privacyAgree: true,
     isAttended: false,
     registeredType: '사전',
@@ -67,24 +75,14 @@ const INITIAL_ATTENDEES: Attendee[] = [
   {
     id: '00000000-0000-0000-0000-000000000002',
     code: '10002',
-    type: '연사',
-    organization: '한국관광공사',
-    position: '본부장',
-    name: '이한국',
-    phone: '010-2026-1002',
-    email: 'hk.lee@knto.or.kr',
-    privacyAgree: true,
-    isAttended: false,
-    registeredType: '사전',
-    printedCount: 0,
-  },
-  {
-    id: '00000000-0000-0000-0000-000000000003',
-    code: '10003',
-    type: 'VIP',
-    organization: 'International Congress and Convention Association',
-    position: 'CEO',
+    nationality: 'Foreign',
+    type: 'Speaker',
     name: 'Senthil Gopinath',
+    nameEn: 'Senthil Gopinath',
+    position: 'Chief Executive Officer',
+    positionEn: 'Chief Executive Officer',
+    organization: 'International Congress and Convention Association',
+    organizationEn: 'International Congress and Convention Association',
     phone: '+31-20-398-1900',
     email: 'ceo@iccaworld.org',
     privacyAgree: true,
@@ -93,14 +91,39 @@ const INITIAL_ATTENDEES: Attendee[] = [
     printedCount: 0,
   },
   {
+    id: '00000000-0000-0000-0000-000000000003',
+    code: '10003',
+    nationality: 'Domestic',
+    type: 'VIP',
+    name: 'Goyang Kim (김고양)',
+    nameEn: 'Goyang Kim',
+    nameKr: '김고양',
+    position: 'Chairman / 이사장',
+    positionEn: 'Chairman',
+    positionKr: '이사장',
+    organization: 'Goyang Destination Bureau / 고양컨벤션뷰로',
+    organizationEn: 'Goyang Destination Bureau',
+    organizationKr: '고양컨벤션뷰로',
+    phone: '010-2026-1003',
+    email: 'goyang.kim@gdw.or.kr',
+    privacyAgree: true,
+    isAttended: false,
+    registeredType: '사전',
+    printedCount: 0,
+  },
+  {
     id: '00000000-0000-0000-0000-000000000004',
     code: '10004',
-    type: '일반',
-    organization: '경희대학교 MICE학과',
-    position: '교수',
-    name: '박경희',
-    phone: '010-2026-1004',
-    email: 'kh.park@khu.ac.kr',
+    nationality: 'Foreign',
+    type: 'VIP',
+    name: 'Alexander Bartholomew Montgomery',
+    nameEn: 'Alexander Bartholomew Montgomery',
+    position: 'Executive Vice President',
+    positionEn: 'Executive Vice President',
+    organization: 'Global MICE Destination Association',
+    organizationEn: 'Global MICE Destination Association',
+    phone: '+1-212-555-0199',
+    email: 'alexander@gmda-events.org',
     privacyAgree: true,
     isAttended: false,
     registeredType: '사전',
@@ -109,10 +132,20 @@ const INITIAL_ATTENDEES: Attendee[] = [
   {
     id: '00000000-0000-0000-0000-000000000005',
     code: '10005',
-    type: '일반',
-    organization: '킨텍스(KINTEX)',
-    position: '차장',
-    name: '정킨텍',
+    nationality: 'Domestic',
+    type: 'Participant',
+    name: 'Kyunghee Park (박경희)',
+    nameEn: 'Kyunghee Park',
+    nameKr: '박경희',
+    position: 'Professor / 교수',
+    positionEn: 'Professor',
+    positionKr: '교수',
+    organization: 'Kyunghee University / 경희대학교',
+    organizationEn: 'Kyunghee University',
+    organizationKr: '경희대학교',
+    phone: '010-2026-1004',
+    email: 'kh.park@khu.ac.kr',
+    privacyAgree: true,
     isAttended: false,
     registeredType: '사전',
     printedCount: 0,
@@ -120,10 +153,17 @@ const INITIAL_ATTENDEES: Attendee[] = [
   {
     id: '00000000-0000-0000-0000-000000000006',
     code: '10006',
-    type: '스태프',
-    organization: '플랜트포유 대행사',
-    position: '운영요원',
-    name: '최운영',
+    nationality: 'Foreign',
+    type: 'Speaker',
+    name: 'Marie Curie-Dupont',
+    nameEn: 'Marie Curie-Dupont',
+    position: 'Keynote Lecturer',
+    positionEn: 'Keynote Lecturer',
+    organization: 'Sorbonne Sustainable Tourism Institute',
+    organizationEn: 'Sorbonne Sustainable Tourism Institute',
+    phone: '+33-1-4268-5500',
+    email: 'm.curie@sorbonne.fr',
+    privacyAgree: true,
     isAttended: false,
     registeredType: '사전',
     printedCount: 0,
@@ -131,10 +171,20 @@ const INITIAL_ATTENDEES: Attendee[] = [
   {
     id: '00000000-0000-0000-0000-000000000007',
     code: '10007',
-    type: '기자',
-    organization: 'MICE 매거진',
-    position: '기자',
-    name: '홍기자',
+    nationality: 'Domestic',
+    type: 'Staff',
+    name: 'Woon-young Choi (최운영)',
+    nameEn: 'Woon-young Choi',
+    nameKr: '최운영',
+    position: 'Operator / 운영요원',
+    positionEn: 'Operator',
+    positionKr: '운영요원',
+    organization: 'PlanForYou / 플랜트포유',
+    organizationEn: 'PlanForYou',
+    organizationKr: '플랜트포유',
+    phone: '010-2026-1005',
+    email: 'staff@planforyou.co.kr',
+    privacyAgree: true,
     isAttended: false,
     registeredType: '사전',
     printedCount: 0,
@@ -142,32 +192,17 @@ const INITIAL_ATTENDEES: Attendee[] = [
   {
     id: '00000000-0000-0000-0000-000000000008',
     code: '10008',
-    type: '연사',
-    organization: 'MCI Group Korea',
-    position: '대표',
-    name: 'Alex Hwang',
-    isAttended: false,
-    registeredType: '사전',
-    printedCount: 0,
-  },
-  {
-    id: '00000000-0000-0000-0000-000000000009',
-    code: '10009',
-    type: '일반',
-    organization: '고양시청 MICE산업과',
-    position: '주무관',
-    name: '지고양',
-    isAttended: false,
-    registeredType: '사전',
-    printedCount: 0,
-  },
-  {
-    id: '00000000-0000-0000-0000-000000000010',
-    code: '10010',
-    type: '스태프',
-    organization: '킨텍스 보안팀',
-    position: '팀장',
-    name: '강보안',
+    nationality: 'Foreign',
+    type: 'Press',
+    name: 'David K. Miller',
+    nameEn: 'David K. Miller',
+    position: 'Senior Bureau Editor',
+    positionEn: 'Senior Bureau Editor',
+    organization: 'MICE International Magazine NY',
+    organizationEn: 'MICE International Magazine NY',
+    phone: '+1-415-889-2041',
+    email: 'david.m@micemagazine.com',
+    privacyAgree: true,
     isAttended: false,
     registeredType: '사전',
     printedCount: 0,
@@ -179,9 +214,16 @@ const mapDbToAttendee = (db: any): Attendee => ({
   id: db.id,
   code: db.code,
   type: db.type,
-  organization: db.organization,
-  position: db.position || '',
-  name: db.name,
+  nationality: (db.nationality as 'Domestic' | 'Foreign') || (db.name_kr ? 'Domestic' : 'Foreign'),
+  organization: db.organization || (db.org_en && db.org_kr ? `${db.org_en} / ${db.org_kr}` : (db.org_en || db.org_kr || '')),
+  organizationEn: db.org_en || db.organization_en || undefined,
+  organizationKr: db.org_kr || db.organization_kr || undefined,
+  position: db.position || (db.position_en && db.position_kr ? `${db.position_en} / ${db.position_kr}` : (db.position_en || db.position_kr || '')),
+  positionEn: db.position_en || undefined,
+  positionKr: db.position_kr || undefined,
+  name: db.name || (db.name_en && db.name_kr ? `${db.name_en} (${db.name_kr})` : (db.name_en || db.name_kr || '')),
+  nameEn: db.name_en || undefined,
+  nameKr: db.name_kr || undefined,
   phone: db.phone || undefined,
   email: db.email || undefined,
   privacyAgree: db.privacy_agree ?? false,
@@ -196,9 +238,16 @@ const mapAttendeeToDb = (att: Attendee) => ({
   id: att.id,
   code: att.code,
   type: att.type,
-  organization: att.organization,
-  position: att.position || null,
-  name: att.name,
+  nationality: att.nationality || (att.nameKr ? 'Domestic' : 'Foreign'),
+  name: att.name || (att.nameEn && att.nameKr ? `${att.nameEn} (${att.nameKr})` : (att.nameEn || att.nameKr || '')),
+  name_en: att.nameEn || null,
+  name_kr: att.nameKr || null,
+  position: att.position || (att.positionEn && att.positionKr ? `${att.positionEn} / ${att.positionKr}` : (att.positionEn || att.positionKr || null)),
+  position_en: att.positionEn || null,
+  position_kr: att.positionKr || null,
+  organization: att.organization || (att.organizationEn && att.organizationKr ? `${att.organizationEn} / ${att.organizationKr}` : (att.organizationEn || att.organizationKr || null)),
+  org_en: att.organizationEn || null,
+  org_kr: att.organizationKr || null,
   phone: att.phone || null,
   email: att.email || null,
   privacy_agree: att.privacyAgree ?? false,
@@ -279,15 +328,19 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [preSurveys, setPreSurveys] = useState<PreSurvey[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [dbError, setDbError] = useState<string | null>(null);
+  const [dbStatus, setDbStatus] = useState<'online' | 'offline' | 'reconnecting'>(
+    isSupabaseConfigured ? 'online' : 'offline'
+  );
   const [useLocalStorage, setUseLocalStorage] = useState<boolean>(!isSupabaseConfigured);
   const [deskId, setDeskIdState] = useState<string>('Desk-01');
-  const [settings, setSettingsState] = useState<PrintSettings>({ pageWidth: 80, pageHeight: 50 });
+  const [settings, setSettingsState] = useState<PrintSettings>({ pageWidth: 90, pageHeight: 80 });
   
   // 로그인 상태 추가
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [userRole, setUserRole] = useState<'admin' | 'desk' | null>(null);
 
   const channel = React.useMemo(() => new BroadcastChannel('mice_idcard_sync'), []);
+  const isPollingRef = React.useRef(false);
 
   // Settings Load Utility
   const loadSettingsFromLocalStorage = () => {
@@ -298,9 +351,9 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       document.documentElement.style.setProperty('--page-width', `${parsed.pageWidth}mm`);
       document.documentElement.style.setProperty('--page-height', `${parsed.pageHeight}mm`);
     } else {
-      setSettingsState({ pageWidth: 80, pageHeight: 50 });
-      document.documentElement.style.setProperty('--page-width', '80mm');
-      document.documentElement.style.setProperty('--page-height', '50mm');
+      setSettingsState({ pageWidth: 90, pageHeight: 80 });
+      document.documentElement.style.setProperty('--page-width', '90mm');
+      document.documentElement.style.setProperty('--page-height', '80mm');
     }
   };
 
@@ -351,18 +404,90 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     ]);
   };
 
-  // Fetch all data from Supabase
-  const fetchAllData = async () => {
+  // Offline queue helper
+  const queueUnsyncedItem = (
+    type: 'attendee' | 'attendee_update' | 'print_log' | 'pre_qna' | 'pre_survey' | 'qna_review_update',
+    data: any
+  ) => {
+    const saved = localStorage.getItem('mice_unsynced_items');
+    const items = saved ? JSON.parse(saved) : [];
+    items.push({ type, data, timestamp: new Date().toISOString() });
+    localStorage.setItem('mice_unsynced_items', JSON.stringify(items));
+    console.log(`[Offline Queue] Added unsynced ${type}:`, data);
+  };
+
+  // Offline queue synchronization helper
+  const syncUnsyncedItems = async () => {
+    if (!isSupabaseConfigured || useLocalStorage) return;
+    const saved = localStorage.getItem('mice_unsynced_items');
+    if (!saved) return;
+
+    const items = JSON.parse(saved);
+    if (items.length === 0) return;
+
+    console.log(`[Sync] Attempting to sync ${items.length} pending offline items to Supabase...`);
+    const remaining: any[] = [];
+
+    for (const item of items) {
+      try {
+        let error = null;
+        if (item.type === 'attendee') {
+          const res = await supabase.from('attendees').insert(mapAttendeeToDb(item.data));
+          error = res.error;
+        } else if (item.type === 'attendee_update') {
+          const res = await supabase.from('attendees').update(mapAttendeeToDb(item.data)).eq('id', item.data.id);
+          error = res.error;
+        } else if (item.type === 'print_log') {
+          const res = await supabase.from('print_logs').insert(mapPrintLogToDb(item.data));
+          error = res.error;
+        } else if (item.type === 'pre_qna') {
+          const res = await supabase.from('pre_qnas').insert(mapPreQnaToDb(item.data));
+          error = res.error;
+        } else if (item.type === 'pre_survey') {
+          const res = await supabase.from('pre_surveys').insert(mapPreSurveyToDb(item.data));
+          error = res.error;
+        } else if (item.type === 'qna_review_update') {
+          const res = await supabase.from('pre_qnas').update({ is_reviewed: item.data.isReviewed }).eq('id', item.data.id);
+          error = res.error;
+        }
+
+        if (error) {
+          console.error(`[Sync] Failed to sync ${item.type}:`, error);
+          remaining.push(item);
+        } else {
+          console.log(`[Sync] Successfully synced ${item.type}:`, item.data.id || item.data.code || '');
+        }
+      } catch (e) {
+        console.error(`[Sync] Connection error during sync for ${item.type}:`, e);
+        remaining.push(item);
+      }
+    }
+
+    if (remaining.length > 0) {
+      localStorage.setItem('mice_unsynced_items', JSON.stringify(remaining));
+    } else {
+      localStorage.removeItem('mice_unsynced_items');
+      console.log('[Sync] All offline data synced successfully.');
+    }
+  };
+
+  // Fetch all data from Supabase (with dynamic timeout)
+  const fetchAllData = async (isInitial: boolean = false) => {
     setIsLoading(true);
     setDbError(null);
+    if (isSupabaseConfigured && !useLocalStorage) {
+      setDbStatus(prev => prev === 'offline' ? 'reconnecting' : prev);
+    }
+
+    const timeoutMs = isInitial ? 12000 : 5000;
+
     try {
-      const isPublicView = window.location.search.includes('view=public-register');
+      const isPublicView = window.location.search.includes('view=public-register') || window.location.search.includes('view=portal');
       const searchParams = new URLSearchParams(window.location.search);
       const codeParam = searchParams.get('code');
 
       if (isPublicView) {
         if (codeParam) {
-          // [초특급 최적화 1] 일반 모바일 티켓 조회 화면에서는 전체 목록을 가져오지 않고, 오직 해당 티켓 코드의 정보만 단건 조회합니다!
           let { data, error } = await withTimeout(
             supabase
               .from('attendees')
@@ -379,8 +504,8 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             throw error;
           } else if (data) {
             setAttendees([mapDbToAttendee(data)]);
+            setDbStatus('online');
           } else {
-            // 조회가 되지 않는 경우, DB가 비어있는 상태인지 확인 후 자동 Seeding을 진행합니다.
             const { count, error: countError } = await withTimeout(
               supabase
                 .from('attendees')
@@ -409,6 +534,7 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 );
                 if (freshData) {
                   setAttendees([mapDbToAttendee(freshData)]);
+                  setDbStatus('online');
                 } else {
                   setAttendees([]);
                   setDbError('등록 정보를 찾을 수 없습니다.');
@@ -424,8 +550,6 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             }
           }
         } else {
-          // [초특급 최적화 2] 모바일 등록 폼 화면에서는 전체 목록을 가져올 필요가 없으므로,
-          // 코드 번호 자동 생성을 위해 현재 저장된 가장 큰 코드 정보 1건만 조회합니다.
           const { data, error } = await withTimeout(
             supabase
               .from('attendees')
@@ -439,50 +563,54 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             console.warn('모바일 등록 코드 조회 실패:', error);
             setAttendees([]);
           } else if (data && data.length > 0) {
-            setAttendees([{ code: data[0].code } as any]);
+            setAttendees([{
+              id: '', code: data[0].code, type: '', organization: '',
+              position: '', name: '', isAttended: false,
+              registeredType: '사전', printedCount: 0,
+            }]);
+            setDbStatus('online');
           } else {
             setAttendees([]);
           }
         }
         setPrintLogs([]);
       } else {
-        // 관리자/데스크 화면에서는 기존처럼 전체 데이터를 수집
-        // [병렬 최적화] 네 테이블 조회를 동시에 처리하되, 일부 테이블 부재 시 개별적으로 폴백 처리합니다.
         const [attResult, logResult, qnaResult, surveyResult] = await Promise.all([
           withTimeout(
             supabase
               .from('attendees')
               .select('*')
               .order('created_at', { ascending: false }),
-            5000
+            timeoutMs
           ).catch(err => ({ error: err, data: null })),
           withTimeout(
             supabase
               .from('print_logs')
               .select('*')
               .order('printed_at', { ascending: false }),
-            5000
+            timeoutMs
           ).catch(err => ({ error: err, data: null })),
           withTimeout(
             supabase
               .from('pre_qnas')
               .select('*')
               .order('created_at', { ascending: false }),
-            5000
+            timeoutMs
           ).catch(err => ({ error: err, data: null })),
           withTimeout(
             supabase
               .from('pre_surveys')
               .select('*')
               .order('created_at', { ascending: false }),
-            5000
+            timeoutMs
           ).catch(err => ({ error: err, data: null }))
         ]);
 
-        const { data: attData, error: attError } = attResult as any;
-        const { data: logData, error: logError } = logResult as any;
-        const { data: qnaData, error: qnaError } = qnaResult as any;
-        const { data: surveyData, error: surveyError } = surveyResult as any;
+        type FetchResult = { data: Record<string, unknown>[] | null; error: unknown };
+        const { data: attData, error: attError } = attResult as FetchResult;
+        const { data: logData, error: logError } = logResult as FetchResult;
+        const { data: qnaData, error: qnaError } = qnaResult as FetchResult;
+        const { data: surveyData, error: surveyError } = surveyResult as FetchResult;
 
         if (attError) throw attError;
         if (logError) throw logError;
@@ -534,10 +662,14 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
 
         setPrintLogs(mappedLogs);
+        setDbStatus('online');
+        setUseLocalStorage(false);
+        syncUnsyncedItems();
       }
     } catch (err: any) {
       console.error('Supabase 데이터 로드 실패. 로컬 저장소 모드로 대체합니다:', err);
       setUseLocalStorage(true);
+      setDbStatus('offline');
       setDbError(
         err.message === 'TIMEOUT'
           ? '데이터베이스 연결 시간이 초과되었습니다.'
@@ -546,6 +678,62 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       loadFromLocalStorageFallback();
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Background polling without blocking UI loading spinner
+  const fetchPollingData = async () => {
+    if (useLocalStorage || !isSupabaseConfigured) return;
+    if (isPollingRef.current) return;
+    isPollingRef.current = true;
+    try {
+      const [attResult, logResult, qnaResult, surveyResult] = await Promise.all([
+        withTimeout(
+          supabase
+            .from('attendees')
+            .select('*')
+            .order('created_at', { ascending: false }),
+          5000
+        ).catch(() => ({ error: true, data: null })),
+        withTimeout(
+          supabase
+            .from('print_logs')
+            .select('*')
+            .order('printed_at', { ascending: false }),
+          5000
+        ).catch(() => ({ error: true, data: null })),
+        withTimeout(
+          supabase
+            .from('pre_qnas')
+            .select('*')
+            .order('created_at', { ascending: false }),
+          5000
+        ).catch(() => ({ error: true, data: null })),
+        withTimeout(
+          supabase
+            .from('pre_surveys')
+            .select('*')
+            .order('created_at', { ascending: false }),
+          5000
+        ).catch(() => ({ error: true, data: null }))
+      ]);
+
+      const attData = attResult.data;
+      const logData = logResult.data;
+      const qnaData = qnaResult.data;
+      const surveyData = surveyResult.data;
+
+      if (attData) setAttendees(attData.map(mapDbToAttendee));
+      if (logData) setPrintLogs(logData.map(mapDbToPrintLog));
+      if (qnaData) setPreQnas(qnaData.map(mapDbToPreQna));
+      if (surveyData) setPreSurveys(surveyData.map(mapDbToPreSurvey));
+      
+      setDbStatus('online');
+      syncUnsyncedItems();
+    } catch (e) {
+      console.warn('백그라운드 폴링 실패:', e);
+    } finally {
+      isPollingRef.current = false;
     }
   };
 
@@ -590,15 +778,19 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   }, [channel]);
 
-  // LocalStorage Sync Listener for Attendees/Logs (Only if Supabase is NOT active)
+  // Hybrid Sync Listener (BroadcastChannel + LocalStorage)
   useEffect(() => {
-    if (!useLocalStorage) return;
-
-    loadFromLocalStorageFallback();
+    if (useLocalStorage) {
+      loadFromLocalStorageFallback();
+    }
 
     const handleSyncMessage = (event: MessageEvent) => {
       if (event.data === 'SYNC_DATA') {
-        loadFromLocalStorageFallback();
+        if (useLocalStorage) {
+          loadFromLocalStorageFallback();
+        } else {
+          fetchPollingData();
+        }
       }
     };
 
@@ -606,12 +798,15 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     
     const handleStorageChange = (e: StorageEvent) => {
       if (
-        e.key === 'mice_attendees' || 
+        e.key === 'mice_attendees' ||
         e.key === 'mice_print_logs' ||
         e.key === 'mice_pre_qnas' ||
         e.key === 'mice_pre_surveys'
       ) {
-        loadFromLocalStorageFallback();
+        // Supabase 모드에서는 BroadcastChannel이 동기화를 담당하므로 storage 이벤트 무시
+        if (useLocalStorage) {
+          loadFromLocalStorageFallback();
+        }
       }
     };
     window.addEventListener('storage', handleStorageChange);
@@ -626,9 +821,9 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     if (!isSupabaseConfigured) return;
 
-    fetchAllData();
+    // Initial load with 12s timeout for cold start
+    fetchAllData(true);
 
-    // [최적화] 모바일 셀프 등록/티켓 조회/포털 화면 접속 시 실시간 웹소켓 구독을 생략합니다.
     const isPublicView = 
       window.location.search.includes('view=public-register') || 
       window.location.search.includes('view=portal');
@@ -639,6 +834,7 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     console.log('관리자/데스크 화면 접속: Supabase Realtime 웹소켓 구독을 시작합니다.');
 
+    let isFirstSubscription = true;
     const channelSubscription = supabase
       .channel('schema-db-changes')
       .on(
@@ -731,12 +927,105 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           }
         }
       )
-      .subscribe();
+      .subscribe((status: string) => {
+        // 재연결 시 끊긴 동안 누락된 이벤트를 따라잡기 위해 즉시 폴링
+        if (status === 'SUBSCRIBED') {
+          if (!isFirstSubscription) {
+            console.log('Realtime 재연결: 누락 이벤트 동기화 시작');
+            fetchPollingData();
+          }
+          isFirstSubscription = false;
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('Realtime 구독 오류:', status);
+          fetchPollingData();
+        }
+      });
 
     return () => {
       supabase.removeChannel(channelSubscription);
     };
   }, []);
+
+  // Effect: Auto-reconnect background timer if using fallback local storage
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+
+    let reconnectTimer: any = null;
+
+    if (useLocalStorage) {
+      console.log('DB 연결 유실: 백그라운드 재연결을 대기합니다.');
+      reconnectTimer = setInterval(async () => {
+        try {
+          const { error } = await supabase.from('attendees').select('id').limit(1);
+          if (!error) {
+            console.log('DB 재연결 성공! 연동 모드로 전환합니다.');
+            setUseLocalStorage(false);
+            setDbStatus('online');
+            setDbError(null);
+            fetchAllData(false);
+          } else {
+            setDbStatus('offline');
+          }
+        } catch (e) {
+          setDbStatus('offline');
+        }
+      }, 15000); // Check connection every 15s
+    }
+
+    return () => {
+      if (reconnectTimer) clearInterval(reconnectTimer);
+    };
+  }, [useLocalStorage]);
+
+  // Effect: Listen to browser network changes to trigger reconnect immediately
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log('네트워크가 온라인으로 감지되었습니다. DB 재연결을 시도합니다.');
+      if (isSupabaseConfigured) {
+        supabase.from('attendees').select('id').limit(1).then(({ error }: any) => {
+          if (!error) {
+            setUseLocalStorage(false);
+            setDbStatus('online');
+            setDbError(null);
+            fetchAllData(false);
+          }
+        });
+      }
+    };
+
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, []);
+
+  // Effect: Visibility change to refresh when user focuses tab
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isSupabaseConfigured && !useLocalStorage) {
+        console.log('화면 활성화: 최신 데이터를 실시간 갱신합니다.');
+        fetchPollingData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [useLocalStorage]);
+
+  // Effect: Automatic polling fallback (every 10 seconds) for admin screens if Realtime subscription is slow
+  useEffect(() => {
+    if (!isSupabaseConfigured || useLocalStorage) return;
+
+    const isPublicView = 
+      window.location.search.includes('view=public-register') || 
+      window.location.search.includes('view=portal');
+    if (isPublicView) return;
+
+    const pollingInterval = setInterval(() => {
+      console.log('실시간 데이터 폴백: 백그라운드 데이터 수정을 확인합니다.');
+      fetchPollingData();
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(pollingInterval);
+  }, [useLocalStorage]);
 
   const setDeskId = (id: string) => {
     setDeskIdState(id);
@@ -848,8 +1137,13 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         results.forEach((res, index) => {
           if (res.error) {
             console.error(`Supabase addAttendee/printLog 에러 [${index}]:`, res.error);
+            queueUnsyncedItem(index === 0 ? 'attendee' : 'print_log', index === 0 ? created : newLog);
           }
         });
+      }).catch((err) => {
+        console.error('Supabase addAttendee Promise 실패:', err);
+        queueUnsyncedItem('attendee', created);
+        if (newLog) queueUnsyncedItem('print_log', newLog);
       });
       
       setAttendees(prev => {
@@ -864,10 +1158,13 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           return [log, ...prev];
         });
       }
+      channel.postMessage('SYNC_DATA');
     } else {
       const updatedAttendees = [created, ...attendees];
       const updatedLogs = newLog ? [newLog, ...printLogs] : printLogs;
       saveAndBroadcast(updatedAttendees, updatedLogs);
+      queueUnsyncedItem('attendee', created);
+      if (newLog) queueUnsyncedItem('print_log', newLog);
     }
     return created;
   };
@@ -898,12 +1195,15 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         .then(({ error }: any) => {
           if (error) {
             console.error('Supabase importAttendees 에러:', error);
+            imported.forEach(att => queueUnsyncedItem('attendee', att));
           }
         });
       setAttendees(prev => [...prev, ...imported]);
+      channel.postMessage('SYNC_DATA');
     } else {
       const updated = [...attendees, ...imported];
       saveAndBroadcast(updated, printLogs);
+      imported.forEach(att => queueUnsyncedItem('attendee', att));
     }
   };
 
@@ -940,8 +1240,14 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           .from('print_logs')
           .insert(mapPrintLogToDb(newLog))
       ]).then(([attRes, logRes]: [any, any]) => {
-        if (attRes.error) console.error('Supabase print update error:', attRes.error);
-        if (logRes.error) console.error('Supabase print log insert error:', logRes.error);
+        if (attRes.error) {
+          console.error('Supabase print update error:', attRes.error);
+          queueUnsyncedItem('attendee_update', updatedAttendee);
+        }
+        if (logRes.error) {
+          console.error('Supabase print log insert error:', logRes.error);
+          queueUnsyncedItem('print_log', newLog);
+        }
       });
 
       setAttendees(prev => prev.map(a => a.id === id ? updatedAttendee : a));
@@ -949,10 +1255,13 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         if (prev.some(l => l.id === newLog.id)) return prev;
         return [newLog, ...prev];
       });
+      channel.postMessage('SYNC_DATA');
     } else {
       const updatedAttendees = attendees.map(att => att.id === id ? updatedAttendee : att);
       const updatedLogs = [newLog, ...printLogs];
       saveAndBroadcast(updatedAttendees, updatedLogs);
+      queueUnsyncedItem('attendee_update', updatedAttendee);
+      queueUnsyncedItem('print_log', newLog);
     }
   };
 
@@ -964,6 +1273,8 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ]).then(([logRes, attRes]: [any, any]) => {
         if (logRes.error) console.error('Supabase clear print_logs error:', logRes.error);
         if (attRes.error) console.error('Supabase clear attendees error:', attRes.error);
+      }).catch((err) => {
+        console.error('Supabase clearAllData Promise 실패:', err);
       });
       setAttendees([]);
       setPrintLogs([]);
@@ -987,6 +1298,8 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         if (error) {
           console.error('Supabase generateDummyData insert error:', error);
         }
+      }).catch((err) => {
+        console.error('Supabase generateDummyData Promise 실패:', err);
       });
       setAttendees(INITIAL_ATTENDEES);
       setPrintLogs([]);
@@ -1012,13 +1325,18 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         .from('pre_qnas')
         .insert(mapPreQnaToDb(created))
         .then(({ error }: any) => {
-          if (error) console.error('Supabase addPreQna error:', error);
+          if (error) {
+            console.error('Supabase addPreQna error:', error);
+            queueUnsyncedItem('pre_qna', created);
+          }
         });
       setPreQnas((prev) => [created, ...prev]);
+      channel.postMessage('SYNC_DATA');
     } else {
       const updated = [created, ...preQnas];
       localStorage.setItem('mice_pre_qnas', JSON.stringify(updated));
       setPreQnas(updated);
+      queueUnsyncedItem('pre_qna', created);
       channel.postMessage('SYNC_DATA');
     }
     return created;
@@ -1036,13 +1354,18 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         .from('pre_surveys')
         .insert(mapPreSurveyToDb(created))
         .then(({ error }: any) => {
-          if (error) console.error('Supabase addPreSurvey error:', error);
+          if (error) {
+            console.error('Supabase addPreSurvey error:', error);
+            queueUnsyncedItem('pre_survey', created);
+          }
         });
       setPreSurveys((prev) => [created, ...prev]);
+      channel.postMessage('SYNC_DATA');
     } else {
       const updated = [created, ...preSurveys];
       localStorage.setItem('mice_pre_surveys', JSON.stringify(updated));
       setPreSurveys(updated);
+      queueUnsyncedItem('pre_survey', created);
       channel.postMessage('SYNC_DATA');
     }
     return created;
@@ -1063,13 +1386,18 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         .update({ is_reviewed: updatedQna.isReviewed })
         .eq('id', id)
         .then(({ error }: any) => {
-          if (error) console.error('Supabase update preQna error:', error);
+          if (error) {
+            console.error('Supabase update preQna error:', error);
+            queueUnsyncedItem('qna_review_update', { id, isReviewed: updatedQna.isReviewed });
+          }
         });
       setPreQnas((prev) => prev.map((q) => (q.id === id ? updatedQna : q)));
+      channel.postMessage('SYNC_DATA');
     } else {
       const updated = preQnas.map((q) => (q.id === id ? updatedQna : q));
       localStorage.setItem('mice_pre_qnas', JSON.stringify(updated));
       setPreQnas(updated);
+      queueUnsyncedItem('qna_review_update', { id, isReviewed: updatedQna.isReviewed });
       channel.postMessage('SYNC_DATA');
     }
   };
@@ -1102,6 +1430,7 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       preSurveys,
       isLoading,
       dbError,
+      dbStatus,
       deskId,
       setDeskId,
       isLoggedIn,

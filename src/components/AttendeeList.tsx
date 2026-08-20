@@ -30,9 +30,52 @@ export const AttendeeList: React.FC<AttendeeListProps> = ({ onPrintTrigger }) =>
       const matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || line.split(',');
       const parts = matches.map(p => p.replace(/^"|"$/g, '').trim());
 
-      if (parts.length >= 4) {
+      // 10열 헤더: 국적,구분,영문이름,국문이름,영문직급,국문직급,영문소속,국문소속,연락처,이메일
+      if (parts.length >= 8) {
+        const nationalityVal = (parts[0] === 'Foreign' || parts[0] === '외국인') ? 'Foreign' : 'Domestic';
+        const typeVal = parts[1] || 'Participant';
+        const nameEnVal = parts[2] || '';
+        const nameKrVal = parts[3] || '';
+        const posEnVal = parts[4] || '';
+        const posKrVal = parts[5] || '';
+        const orgEnVal = parts[6] || '';
+        const orgKrVal = parts[7] || '';
+        const phoneVal = parts[8] || undefined;
+        const emailVal = parts[9] || undefined;
+
+        const primaryName = nameEnVal && nameKrVal 
+          ? `${nameEnVal} (${nameKrVal})` 
+          : (nameEnVal || nameKrVal || 'No Name');
+
+        const primaryPos = posEnVal && posKrVal
+          ? `${posEnVal} / ${posKrVal}`
+          : (posEnVal || posKrVal || '');
+
+        const primaryOrg = orgEnVal && orgKrVal
+          ? `${orgEnVal} / ${orgKrVal}`
+          : (orgEnVal || orgKrVal || '');
+
         result.push({
-          type: parts[0] || '일반',
+          nationality: nationalityVal,
+          type: typeVal,
+          name: primaryName,
+          nameEn: nameEnVal || undefined,
+          nameKr: nameKrVal || undefined,
+          position: primaryPos,
+          positionEn: posEnVal || undefined,
+          positionKr: posKrVal || undefined,
+          organization: primaryOrg,
+          organizationEn: orgEnVal || undefined,
+          organizationKr: orgKrVal || undefined,
+          phone: phoneVal,
+          email: emailVal,
+          privacyAgree: phoneVal || emailVal ? true : undefined,
+          code: ''
+        });
+      } else if (parts.length >= 4) {
+        result.push({
+          nationality: 'Domestic',
+          type: parts[0] || 'Participant',
           organization: parts[1] || '소속 미정',
           position: parts[2] || '직책 미정',
           name: parts[3] || '이름 없음',
@@ -56,8 +99,11 @@ export const AttendeeList: React.FC<AttendeeListProps> = ({ onPrintTrigger }) =>
           importAttendees(parsed);
           alert(`성공적으로 ${parsed.length}명의 사전등록 데이터를 불러왔습니다.`);
         } else {
-          alert('CSV 파일 구조가 올바르지 않습니다. (구분, 소속, 직책, 이름 구조여야 합니다.)');
+          alert('CSV 파일 구조가 올바르지 않습니다. (국적,구분,영문이름,국문이름... 구조여야 합니다.)');
         }
+      };
+      reader.onerror = () => {
+        alert('파일을 읽는 중 오류가 발생했습니다. 다시 시도해 주세요.');
       };
       reader.readAsText(file, 'UTF-8');
     } else {
@@ -91,23 +137,28 @@ export const AttendeeList: React.FC<AttendeeListProps> = ({ onPrintTrigger }) =>
   };
 
   const downloadTemplate = () => {
-    const csvContent = '\uFEFF구분,소속,직책,이름,연락처,이메일\nVIP,고양컨벤션뷰로,이사장,김고양,010-2026-1001,goyang.kim@gdw.or.kr\n연사,한국관광공사,본부장,이한국,010-2026-1002,hk.lee@knto.or.kr\n일반,킨텍스 보안팀,팀장,강보안,010-2026-1234,security@kintex.com';
+    const csvContent = '\uFEFF국적,구분,영문이름,국문이름,영문직급,국문직급,영문소속,국문소속,연락처,이메일\nDomestic,Organizer,Stella Lee,이윤희,PM,매니저,Goyang CVB,고양국제박람회재단,010-2026-1001,stella@gdw.or.kr\nForeign,Speaker,Senthil Gopinath,,Chief Executive Officer,,International Congress and Convention Association,,+31-20-398-1900,ceo@iccaworld.org\nDomestic,VIP,Goyang Kim,김고양,Chairman,이사장,Goyang Destination Bureau,고양컨벤션뷰로,010-2026-1003,goyang.kim@gdw.or.kr\nForeign,VIP,Alexander Bartholomew Montgomery,,Executive Vice President,,Global MICE Destination Association,,+1-212-555-0199,alexander@gmda-events.org';
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', 'Goyang_Destination_Week_2026_템플릿.csv');
+    link.setAttribute('download', 'GDW_2026_참가자업로드_표준템플릿.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const filteredAttendees = attendees.filter(att => {
+    const query = searchQuery.toLowerCase();
     const matchesSearch = 
-      att.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      att.organization.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      att.code.includes(searchQuery);
+      att.name.toLowerCase().includes(query) ||
+      (att.nameEn && att.nameEn.toLowerCase().includes(query)) ||
+      (att.nameKr && att.nameKr.toLowerCase().includes(query)) ||
+      att.organization.toLowerCase().includes(query) ||
+      (att.organizationEn && att.organizationEn.toLowerCase().includes(query)) ||
+      (att.organizationKr && att.organizationKr.toLowerCase().includes(query)) ||
+      att.code.includes(query);
 
     const matchesType = typeFilter === 'ALL' || att.type === typeFilter;
     
@@ -145,9 +196,11 @@ export const AttendeeList: React.FC<AttendeeListProps> = ({ onPrintTrigger }) =>
           />
           <Upload size={32} style={{ color: 'var(--accent)', marginBottom: '0.75rem' }} />
           <p style={dropZoneText}>
-            사전등록 CSV 파일을 드래그하여 놓거나 <strong>클릭하여 업로드</strong>하세요.
+            <strong>사전등록 엑셀(CSV) 파일 드롭</strong> 또는 클릭하여 업로드
           </p>
-          <p style={dropZoneSubtext}>지원 형식: .csv (구분, 소속, 직책, 이름)</p>
+          <p style={dropZoneSubtext}>
+            (국적, 구분, 영문/국문 이름, 직급, 소속, 연락처, 이메일 컬럼 자동 인식)
+          </p>
         </div>
 
         <div className="glass" style={controlPanelStyle}>
@@ -155,7 +208,7 @@ export const AttendeeList: React.FC<AttendeeListProps> = ({ onPrintTrigger }) =>
           <div style={buttonGroupStyle}>
             <button style={btnTemplateStyle} onClick={downloadTemplate}>
               <Download size={16} style={{ marginRight: '6px' }} />
-              엑셀 업로드 템플릿 다운로드
+              표준 CSV 템플릿 다운로드
             </button>
             <button style={btnDummyStyle} onClick={generateDummyData}>
               <RefreshCw size={16} style={{ marginRight: '6px' }} />
@@ -178,7 +231,7 @@ export const AttendeeList: React.FC<AttendeeListProps> = ({ onPrintTrigger }) =>
           <Search size={18} style={searchIcon} />
           <input 
             type="text" 
-            placeholder="이름, 소속, 또는 등록코드로 검색..." 
+            placeholder="이름(영문/국문), 소속, 또는 등록코드 검색..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={searchInputStyle}
@@ -225,7 +278,7 @@ export const AttendeeList: React.FC<AttendeeListProps> = ({ onPrintTrigger }) =>
               <tr style={thRowStyle}>
                 <th style={thStyle}>등록코드</th>
                 <th style={thStyle}>구분</th>
-                <th style={thStyle}>이름</th>
+                <th style={thStyle}>성명</th>
                 <th style={thStyle}>소속</th>
                 <th style={thStyle}>직책</th>
                 <th style={thStyle}>연락처</th>
@@ -244,7 +297,12 @@ export const AttendeeList: React.FC<AttendeeListProps> = ({ onPrintTrigger }) =>
                     <td>
                       <span style={typeBadgeStyle(att.type)}>{att.type}</span>
                     </td>
-                    <td style={tdNameStyle}>{att.name}</td>
+                    <td style={tdNameStyle}>
+                      <span style={{ fontSize: '0.8rem', marginRight: '4px' }} title={att.nationality === 'Foreign' || (!att.nationality && !att.nameKr) ? '외국인 (Foreign)' : '내국인 (Domestic)'}>
+                        {att.nationality === 'Foreign' || (!att.nationality && !att.nameKr) ? '🌐' : '🇰🇷'}
+                      </span>
+                      {att.name}
+                    </td>
                     <td style={tdOrgStyle}>{att.organization}</td>
                     <td style={tdPosStyle}>{att.position}</td>
                     <td style={tdStyle}>{att.phone || <span style={{ color: 'var(--text-muted)' }}>-</span>}</td>

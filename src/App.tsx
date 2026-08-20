@@ -16,7 +16,7 @@ import { LayoutDashboard, QrCode, UserPlus, MessageSquare, Database, Sparkles, S
 import './App.css';
 
 const MainApp: React.FC = () => {
-  const { deskId, userRole, logout } = useAttendees();
+  const { deskId, userRole, logout, dbStatus } = useAttendees();
   
   // 일반 데스크 로그인 시 기본 탭을 스캐너로 지정
   const [activeTab, setActiveTab] = useState<'dashboard' | 'scanner' | 'register' | 'sms' | 'list' | 'settings' | 'portal-admin'>('scanner');
@@ -66,8 +66,21 @@ const MainApp: React.FC = () => {
           </div>
         </div>
         
-        {/* 데스크 ID 라이브 뱃지 & 로그아웃 버튼 */}
+        {/* 데스크 ID 라이브 뱃지, DB 상태 뱃지 & 로그아웃 버튼 */}
         <div style={headerMeta}>
+          <div style={{
+            ...dbStatusBadgeStyle,
+            backgroundColor: dbStatus === 'online' ? 'rgba(16, 185, 129, 0.1)' : dbStatus === 'reconnecting' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+            borderColor: dbStatus === 'online' ? 'rgba(16, 185, 129, 0.2)' : dbStatus === 'reconnecting' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+            color: dbStatus === 'online' ? '#34d399' : dbStatus === 'reconnecting' ? '#fbbf24' : '#f87171'
+          }}>
+            <span style={{
+              ...activeDot,
+              backgroundColor: dbStatus === 'online' ? '#10b981' : dbStatus === 'reconnecting' ? '#f59e0b' : '#ef4444'
+            }} />
+            {dbStatus === 'online' ? 'DB 연결됨' : dbStatus === 'reconnecting' ? 'DB 재연결 중...' : '로컬 모드 (오프라인)'}
+          </div>
+
           <div style={deskBadgeStyle}>
             <span style={activeDot} />
             {userRole === 'admin' ? '마스터 관리자' : `${deskId} 요원`} 로그인 중
@@ -321,4 +334,16 @@ const btnLogoutStyle: React.CSSProperties = {
   fontWeight: '600',
   cursor: 'pointer',
   transition: 'all 0.2s',
+};
+
+const dbStatusBadgeStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.4rem',
+  border: '1px solid transparent',
+  padding: '0.35rem 0.75rem',
+  borderRadius: '20px',
+  fontSize: '0.75rem',
+  fontWeight: '600',
+  transition: 'all 0.2s ease',
 };
