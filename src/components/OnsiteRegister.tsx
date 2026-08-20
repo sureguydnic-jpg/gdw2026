@@ -256,23 +256,29 @@ export const OnsiteRegister: React.FC<OnsiteRegisterProps> = ({ onPrintTrigger }
           {/* 연락처 / 이메일 */}
           <div style={gridRowStyle}>
             <div style={formGroupStyle}>
-              <label style={labelStyle}>연락처 (Phone)</label>
+              <label style={labelStyle}>
+                연락처 (Phone) <span style={{ color: '#ef4444', fontWeight: '700' }}>*필수*</span>
+              </label>
               <input 
                 type="tel" 
                 placeholder="010-0000-0000" 
                 value={phone} 
                 onChange={(e) => setPhone(e.target.value)}
                 style={inputStyle}
+                required
               />
             </div>
             <div style={formGroupStyle}>
-              <label style={labelStyle}>이메일 (Email)</label>
+              <label style={labelStyle}>
+                이메일 (Email) <span style={{ color: '#ef4444', fontWeight: '700' }}>*필수*</span>
+              </label>
               <input 
                 type="email" 
                 placeholder="user@example.com" 
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)}
                 style={inputStyle}
+                required
               />
             </div>
           </div>

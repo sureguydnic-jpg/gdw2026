@@ -378,7 +378,9 @@ export const PublicRegister: React.FC = () => {
             )}
 
             <div style={formGroupStyle}>
-              <label style={labelStyle}>연락처 (Phone)</label>
+              <label style={labelStyle}>
+                연락처 (Phone) <span style={{ color: '#ef4444', fontWeight: '700' }}>*필수*</span>
+              </label>
               <div style={inputIconWrapper}>
                 <Phone size={14} style={inputIcon} />
                 <input 
@@ -393,7 +395,9 @@ export const PublicRegister: React.FC = () => {
             </div>
 
             <div style={formGroupStyle}>
-              <label style={labelStyle}>이메일 주소 (Email)</label>
+              <label style={labelStyle}>
+                이메일 주소 (Email) <span style={{ color: '#ef4444', fontWeight: '700' }}>*필수*</span>
+              </label>
               <div style={inputIconWrapper}>
                 <Mail size={14} style={inputIcon} />
                 <input 
