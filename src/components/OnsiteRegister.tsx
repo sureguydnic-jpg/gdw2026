@@ -24,9 +24,15 @@ export const OnsiteRegister: React.FC<OnsiteRegisterProps> = ({ onPrintTrigger }
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (nationality === 'Domestic' && !nameKr.trim() && !nameEn.trim()) {
-      alert('내국인 참가자의 이름을 입력해 주세요.');
-      return;
+    if (nationality === 'Domestic') {
+      if (!nameKr.trim()) {
+        alert('내국인 국문 이름을 입력해 주세요.');
+        return;
+      }
+      if (!nameEn.trim()) {
+        alert('내국인 영문 이름을 입력해 주세요.');
+        return;
+      }
     }
 
     if (nationality === 'Foreign' && !nameEn.trim()) {
@@ -144,17 +150,22 @@ export const OnsiteRegister: React.FC<OnsiteRegisterProps> = ({ onPrintTrigger }
           {nationality === 'Domestic' ? (
             <div style={gridRowStyle}>
               <div style={formGroupStyle}>
-                <label style={labelStyle}>1-1. 영문이름 (English Name)</label>
+                <label style={labelStyle}>
+                  1-1. 영문이름 (English Name) <span style={{ color: 'var(--accent)', fontWeight: '700' }}>*필수*</span>
+                </label>
                 <input 
                   type="text" 
                   placeholder="Gildong Hong (또는 Hong Gildong)" 
                   value={nameEn} 
                   onChange={(e) => setNameEn(e.target.value)}
                   style={inputStyle}
+                  required
                 />
               </div>
               <div style={formGroupStyle}>
-                <label style={labelStyle}>1-2. 국문이름 (Korean Name)</label>
+                <label style={labelStyle}>
+                  1-2. 국문이름 (Korean Name) <span style={{ color: 'var(--accent)', fontWeight: '700' }}>*필수*</span>
+                </label>
                 <input 
                   type="text" 
                   placeholder="홍길동" 
@@ -167,7 +178,9 @@ export const OnsiteRegister: React.FC<OnsiteRegisterProps> = ({ onPrintTrigger }
             </div>
           ) : (
             <div style={formGroupStyle}>
-              <label style={labelStyle}>1. 영문성명 (Full English Name) *필수*</label>
+              <label style={labelStyle}>
+                1. 영문성명 (Full English Name) <span style={{ color: 'var(--accent)', fontWeight: '700' }}>*필수*</span>
+              </label>
               <input 
                 type="text" 
                 placeholder="John Doe (또는 Jane Doe)" 
@@ -257,7 +270,7 @@ export const OnsiteRegister: React.FC<OnsiteRegisterProps> = ({ onPrintTrigger }
           <div style={gridRowStyle}>
             <div style={formGroupStyle}>
               <label style={labelStyle}>
-                연락처 (Phone) <span style={{ color: '#ef4444', fontWeight: '700' }}>*필수*</span>
+                연락처 (Phone) <span style={{ color: 'var(--accent)', fontWeight: '700' }}>*필수*</span>
               </label>
               <input 
                 type="tel" 
@@ -270,7 +283,7 @@ export const OnsiteRegister: React.FC<OnsiteRegisterProps> = ({ onPrintTrigger }
             </div>
             <div style={formGroupStyle}>
               <label style={labelStyle}>
-                이메일 (Email) <span style={{ color: '#ef4444', fontWeight: '700' }}>*필수*</span>
+                이메일 (Email) <span style={{ color: 'var(--accent)', fontWeight: '700' }}>*필수*</span>
               </label>
               <input 
                 type="email" 

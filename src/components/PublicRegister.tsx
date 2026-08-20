@@ -44,9 +44,15 @@ export const PublicRegister: React.FC = () => {
       return;
     }
 
-    if (!isForeign && !nameKr.trim() && !nameEn.trim()) {
-      alert('성명(영문 또는 국문)을 기입해 주세요.');
-      return;
+    if (!isForeign) {
+      if (!nameKr.trim()) {
+        alert('국문 이름을 기입해 주세요.');
+        return;
+      }
+      if (!nameEn.trim()) {
+        alert('영문 이름을 기입해 주세요.');
+        return;
+      }
     }
 
     if (!phone.trim() || !email.trim()) {
@@ -268,7 +274,9 @@ export const PublicRegister: React.FC = () => {
             {nationality === 'Domestic' ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
                 <div style={formGroupStyle}>
-                  <label style={labelStyle}>국문이름 (Korean Name) *필수*</label>
+                  <label style={labelStyle}>
+                    국문이름 (Korean Name) <span style={{ color: 'var(--accent)', fontWeight: '700' }}>*필수*</span>
+                  </label>
                   <input 
                     type="text" 
                     placeholder="예: 홍길동" 
@@ -279,19 +287,24 @@ export const PublicRegister: React.FC = () => {
                   />
                 </div>
                 <div style={formGroupStyle}>
-                  <label style={labelStyle}>영문이름 (English Name)</label>
+                  <label style={labelStyle}>
+                    영문이름 (English Name) <span style={{ color: 'var(--accent)', fontWeight: '700' }}>*필수*</span>
+                  </label>
                   <input 
                     type="text" 
                     placeholder="예: Gildong Hong (또는 Hong Gildong)" 
                     value={nameEn} 
                     onChange={(e) => setNameEn(e.target.value)}
                     style={inputStyle}
+                    required
                   />
                 </div>
               </div>
             ) : (
               <div style={formGroupStyle}>
-                <label style={labelStyle}>영문성명 (Full English Name) *필수*</label>
+                <label style={labelStyle}>
+                  영문성명 (Full English Name) <span style={{ color: 'var(--accent)', fontWeight: '700' }}>*필수*</span>
+                </label>
                 <input 
                   type="text" 
                   placeholder="John Doe (또는 Jane Doe)" 
@@ -379,7 +392,7 @@ export const PublicRegister: React.FC = () => {
 
             <div style={formGroupStyle}>
               <label style={labelStyle}>
-                연락처 (Phone) <span style={{ color: '#ef4444', fontWeight: '700' }}>*필수*</span>
+                연락처 (Phone) <span style={{ color: 'var(--accent)', fontWeight: '700' }}>*필수*</span>
               </label>
               <div style={inputIconWrapper}>
                 <Phone size={14} style={inputIcon} />
@@ -396,7 +409,7 @@ export const PublicRegister: React.FC = () => {
 
             <div style={formGroupStyle}>
               <label style={labelStyle}>
-                이메일 주소 (Email) <span style={{ color: '#ef4444', fontWeight: '700' }}>*필수*</span>
+                이메일 주소 (Email) <span style={{ color: 'var(--accent)', fontWeight: '700' }}>*필수*</span>
               </label>
               <div style={inputIconWrapper}>
                 <Mail size={14} style={inputIcon} />
