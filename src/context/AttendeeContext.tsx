@@ -489,19 +489,46 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Fetch all data from Supabase (with dynamic timeout)
   const fetchAllData = async (isInitial: boolean = false) => {
-    setIsLoading(true);
     setDbError(null);
     if (isSupabaseConfigured && !useLocalStorage) {
       setDbStatus(prev => prev === 'offline' ? 'reconnecting' : prev);
     }
 
-    const timeoutMs = isInitial ? 12000 : 5000;
+    const isPublicView = window.location.search.includes('view=public-register') || window.location.search.includes('view=portal');
+    const searchParams = new URLSearchParams(window.location.search);
+    const codeParam = searchParams.get('code');
+
+    // ⚡ [0초 쾌속 로딩 패턴] 로컬 저장소 및 기본 데이터셋에서 즉시 선조회 (Stale-While-Revalidate)
+    const savedAttendeesStr = localStorage.getItem('mice_attendees');
+    let localList: Attendee[] = [];
+    try {
+      localList = savedAttendeesStr ? JSON.parse(savedAttendeesStr) : INITIAL_ATTENDEES;
+    } catch(e) {
+      localList = INITIAL_ATTENDEES;
+    }
+
+    if (codeParam) {
+      const localFound = localList.find(a => a.code === codeParam);
+      if (localFound) {
+        setAttendees([localFound]);
+        setIsLoading(false); // 로컬 캐시 발견 즉시 스피너 해제 (0초 응답)
+      } else {
+        setIsLoading(true);
+      }
+    } else {
+      if (isPublicView) {
+        setIsLoading(false);
+      } else {
+        if (localList.length > 0 && attendees.length === 0) {
+          setAttendees(localList);
+        }
+        setIsLoading(true);
+      }
+    }
+
+    const timeoutMs = isInitial ? 4000 : 2500;
 
     try {
-      const isPublicView = window.location.search.includes('view=public-register') || window.location.search.includes('view=portal');
-      const searchParams = new URLSearchParams(window.location.search);
-      const codeParam = searchParams.get('code');
-
       if (isPublicView) {
         if (codeParam) {
           let { data, error } = await withTimeout(
@@ -510,59 +537,23 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
               .select('*')
               .eq('code', codeParam)
               .maybeSingle(),
-            4000
-          );
+            1500 // 1.5초 쾌속 타임아웃
+          ).catch(e => ({ error: e, data: null }));
 
-          if (error) {
-            console.warn('모바일 티켓 단건 조회 실패:', error);
-            setAttendees([]);
-            setDbError('티켓 조회 중 오류가 발생했습니다.');
-            throw error;
-          } else if (data) {
+          if (!error && data) {
             setAttendees([mapDbToAttendee(data)]);
             setDbStatus('online');
+            setIsLoading(false);
           } else {
-            const { count, error: countError } = await withTimeout(
-              supabase
-                .from('attendees')
-                .select('*', { count: 'exact', head: true }),
-              4000
-            );
-            
-            if (!countError && count === 0) {
-              console.log('Supabase가 비어 있어 모바일 접속 시점에 초기 데이터를 주입(seeding)합니다.');
-              const dbAttendees = INITIAL_ATTENDEES.map(mapAttendeeToDb);
-              const { error: seedError } = await withTimeout(
-                supabase
-                  .from('attendees')
-                  .insert(dbAttendees),
-                4000
-              );
-              
-              if (!seedError) {
-                const { data: freshData } = await withTimeout(
-                  supabase
-                    .from('attendees')
-                    .select('*')
-                    .eq('code', codeParam)
-                    .maybeSingle(),
-                  4000
-                );
-                if (freshData) {
-                  setAttendees([mapDbToAttendee(freshData)]);
-                  setDbStatus('online');
-                } else {
-                  setAttendees([]);
-                  setDbError('등록 정보를 찾을 수 없습니다.');
-                }
-              } else {
-                setAttendees([]);
-                setDbError('초기 데이터 주입 실패로 조회할 수 없습니다.');
-                throw seedError;
-              }
+            const localFound = localList.find(a => a.code === codeParam);
+            if (localFound) {
+              setAttendees([localFound]);
+              setDbStatus('offline');
+              setIsLoading(false);
             } else {
               setAttendees([]);
               setDbError('등록 정보를 찾을 수 없습니다.');
+              setIsLoading(false);
             }
           }
         } else {
@@ -572,22 +563,18 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
               .select('code')
               .order('code', { ascending: false })
               .limit(1),
-            4000
-          );
+            1500
+          ).catch(e => ({ error: e, data: null }));
 
-          if (error) {
-            console.warn('모바일 등록 코드 조회 실패:', error);
-            setAttendees([]);
-          } else if (data && data.length > 0) {
+          if (!error && data && data.length > 0) {
             setAttendees([{
               id: '', code: data[0].code, type: '', organization: '',
               position: '', name: '', isAttended: false,
               registeredType: '사전', printedCount: 0,
             }]);
             setDbStatus('online');
-          } else {
-            setAttendees([]);
           }
+          setIsLoading(false);
         }
         setPrintLogs([]);
       } else {
