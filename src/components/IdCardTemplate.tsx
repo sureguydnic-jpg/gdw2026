@@ -228,8 +228,6 @@ export const IdCardTemplate: React.FC<IdCardTemplateProps> = ({ attendee }) => {
 
     return (
       <div style={cardStyle}>
-        <div style={topEventHeaderStyle}>GOYANG DESTINATION WEEK 2026</div>
-
         {/* 초대형 영문 이름 */}
         <div style={foreignNameStyle}>{nameEn}</div>
 
@@ -313,8 +311,6 @@ export const IdCardTemplate: React.FC<IdCardTemplateProps> = ({ attendee }) => {
 
   return (
     <div style={cardStyle}>
-      <div style={topEventHeaderStyle}>GOYANG DESTINATION WEEK 2026</div>
-
       {/* 1-1. 영문이름 & 1-2. 국문이름 */}
       <div style={domesticNameBlock}>
         <div style={domesticNameEnStyle}>{nameEn}</div>
