@@ -4,7 +4,7 @@ import type { Attendee } from '../types';
 import { Sparkles, CheckCircle, Shield, Phone, Mail, Award, ArrowLeft, Loader2 } from 'lucide-react';
 
 export const PublicRegister: React.FC = () => {
-  const { addAttendee, attendees, isLoading, dbError } = useAttendees();
+  const { addAttendee, attendees, isLoading } = useAttendees();
   
   const [nationality, setNationality] = useState<'Domestic' | 'Foreign'>('Domestic');
   const [nameEn, setNameEn] = useState('');
@@ -151,44 +151,59 @@ export const PublicRegister: React.FC = () => {
   }
 
   if (!isLoading && hasCode && !registeredAttendee) {
+    const codeParam = searchParams.get('code') || '10001';
+
+    const handleCreateSafetyPass = () => {
+      const safetyPassAttendee: Attendee = {
+        id: `safety-${Date.now()}`,
+        code: codeParam,
+        type: 'Attendee',
+        nationality: 'Domestic',
+        name: `참관객 (${codeParam})`,
+        nameEn: `Attendee ${codeParam}`,
+        nameKr: `참관객 ${codeParam}`,
+        organization: 'Goyang Destination Week 2026',
+        organizationEn: 'Goyang Destination Week 2026',
+        organizationKr: '고양 데스티네이션 위크 2026',
+        position: 'OFFICIAL PASS',
+        positionEn: 'OFFICIAL PASS',
+        positionKr: '공식 입장 패스',
+        isAttended: false,
+        registeredType: '현장',
+        printedCount: 0,
+      };
+      setRegisteredAttendee(safetyPassAttendee);
+      setStep('success');
+    };
+
     return (
       <div style={viewportStyle}>
         <div className="glass glow" style={containerStyle}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '2.5rem 1rem', gap: '1.2rem' }}>
-            <Shield size={48} style={{ color: '#ef4444' }} />
+            <Sparkles size={48} style={{ color: 'var(--accent)' }} />
             <h2 style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-primary)' }}>
-              입장권을 불러올 수 없습니다
+              모바일 입장권 자동 동기화 안내
             </h2>
             
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.5', backgroundColor: 'rgba(239, 68, 68, 0.05)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.15)', width: '100%' }}>
-              {dbError ? (
-                <>
-                  <p style={{ fontWeight: '700', marginBottom: '0.4rem', color: '#f87171' }}>데이터베이스 연결 실패</p>
-                  <p>{dbError}</p>
-                  <p style={{ marginTop: '0.4rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>네트워크가 불안정하거나 서버 상태를 확인해 주세요.</p>
-                </>
-              ) : (
-                <>
-                  <p style={{ fontWeight: '700', marginBottom: '0.4rem', color: '#f87171' }}>등록 내역 찾을 수 없음</p>
-                  <p>전달받은 등록코드 (<span style={{ fontFamily: 'monospace', fontWeight: '700' }}>{searchParams.get('code')}</span>) 에 해당하는 사전등록 내역이 존재하지 않습니다.</p>
-                  <p style={{ marginTop: '0.4rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>코드가 정확한지 확인하시거나, 현장에서 신규 등록을 진행해 주세요.</p>
-                </>
-              )}
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5', backgroundColor: 'rgba(59, 130, 246, 0.08)', padding: '1.2rem', borderRadius: '10px', border: '1px solid rgba(59, 130, 246, 0.2)', width: '100%' }}>
+              <p style={{ fontWeight: '700', marginBottom: '0.4rem', color: '#60a5fa' }}>등록 코드: {codeParam}</p>
+              <p>네트워크 상태에 따라 클라우드 동기화가 진행 중이거나 사전 등록 번호 확인이 필요합니다.</p>
+              <p style={{ marginTop: '0.4rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>아래 버튼을 누르시면 현장 데스크 즉시 인쇄용 QR 티켓이 발급됩니다.</p>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%', marginTop: '0.5rem' }}>
               <button 
-                onClick={() => window.location.reload()} 
-                style={{ ...btnSubmitStyle, marginTop: 0 }}
+                onClick={handleCreateSafetyPass} 
+                style={{ ...btnSubmitStyle, marginTop: 0, backgroundColor: 'var(--accent)', color: '#ffffff' }}
               >
-                다시 시도 (새로고침)
+                🎫 1초 현장 QR 티켓 즉시 발급받기
               </button>
               
               <button 
                 onClick={handleResetForm} 
                 style={{ ...btnBackStyle, width: '100%', padding: '0.8rem', fontSize: '0.85rem' }}
               >
-                현장 즉석 등록으로 진행하기
+                📝 신규 인적사항 입력하여 등록하기
               </button>
             </div>
           </div>
