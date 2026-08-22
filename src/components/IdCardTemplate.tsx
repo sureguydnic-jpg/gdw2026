@@ -156,6 +156,13 @@ export const IdCardTemplate: React.FC<IdCardTemplateProps> = ({ attendee }) => {
     lineHeight: 1,
   };
 
+  const getQuickTypeFontSize = (typeStr: string, sc: number) => {
+    const t = typeStr.toUpperCase();
+    if (t === 'VIP' || t === 'PCO') return `${56 * sc}pt`;
+    if (t === 'STAFF' || t === 'PRESS' || t === 'GUEST') return `${48 * sc}pt`;
+    return `${42 * sc}pt`;
+  };
+
   // 무기명 퀵 발급 명찰 레이아웃 판별 (STAFF, PRESS, GUEST, VIP 전용)
   const isQuickBadge = attendee.code.startsWith('QUICK-') || attendee.name === attendee.type;
 
@@ -164,10 +171,10 @@ export const IdCardTemplate: React.FC<IdCardTemplateProps> = ({ attendee }) => {
       <div style={cardStyle}>
         <div style={topEventHeaderStyle}>GOYANG DESTINATION WEEK 2026</div>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-          <div style={{ fontSize: `${38 * scale}pt`, fontWeight: 900, color: '#000000', letterSpacing: `${2 * scale}px`, lineHeight: 1 }}>
+          <div style={{ fontSize: getQuickTypeFontSize(attendee.type, scale), fontWeight: 900, color: '#000000', letterSpacing: `${2.5 * scale}px`, lineHeight: 1 }}>
             {attendee.type}
           </div>
-          <div style={{ fontSize: `${15 * scale}pt`, fontWeight: 800, color: '#111111', marginTop: `${4 * scale}mm` }}>
+          <div style={{ fontSize: `${18 * scale}pt`, fontWeight: 850, color: '#111111', marginTop: `${4 * scale}mm` }}>
             {attendee.nameKr || '공식 패스'}
           </div>
         </div>
