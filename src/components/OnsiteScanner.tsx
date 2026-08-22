@@ -8,7 +8,7 @@ interface OnsiteScannerProps {
 }
 
 export const OnsiteScanner: React.FC<OnsiteScannerProps> = ({ onPrintTrigger }) => {
-  const { attendees, deskId, setDeskId, printAttendee } = useAttendees();
+  const { attendees, deskId, setDeskId, printAttendee, isTestMode } = useAttendees();
   
   const [scanInput, setScanInput] = useState('');
   const [scannedAttendee, setScannedAttendee] = useState<Attendee | null>(null);
@@ -219,11 +219,12 @@ export const OnsiteScanner: React.FC<OnsiteScannerProps> = ({ onPrintTrigger }) 
           {scanStatus === 'printing' && scannedAttendee && (
             <div style={statusContainer}>
               <div className="glow" style={printingIconWrapper}>
-                <Printer size={56} style={{ color: 'var(--mint)', animation: 'bounce 1s infinite' }} />
+                <Printer size={56} style={{ color: isTestMode ? '#f59e0b' : 'var(--mint)', animation: 'bounce 1s infinite' }} />
               </div>
-              <h3 style={printingTitle}>명찰 발급 중</h3>
+              <h3 style={printingTitle}>{isTestMode ? '🧪 테스트 명찰 발급 중' : '명찰 발급 중'}</h3>
               <p style={printingDesc}>
                 <strong>{scannedAttendee.name}</strong> 님의 명찰 인쇄 작업이 프린터로 전송되었습니다.
+                {isTestMode && <span style={{ display: 'block', color: '#fbbf24', marginTop: '0.4rem', fontWeight: 600 }}>(🧪 테스트 모드: 출석 횟수 및 DB 통계에 반영되지 않습니다)</span>}
               </p>
               <div style={printerPaperAnimation}>
                 <div style={paperStrip} />

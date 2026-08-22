@@ -13,7 +13,7 @@ export const PublicRegister: React.FC = () => {
   const [organizationKr, setOrganizationKr] = useState('');
   const [positionEn, setPositionEn] = useState('');
   const [positionKr, setPositionKr] = useState('');
-  const [type, setType] = useState('Participant');
+  const [type, setType] = useState('Attendee');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [privacyAgree, setPrivacyAgree] = useState(false);
@@ -122,7 +122,7 @@ export const PublicRegister: React.FC = () => {
     setOrganizationKr('');
     setPositionEn('');
     setPositionKr('');
-    setType('Participant');
+    setType('Attendee');
     setPhone('');
     setEmail('');
     setPrivacyAgree(false);
@@ -256,18 +256,21 @@ export const PublicRegister: React.FC = () => {
 
             <div style={formGroupStyle}>
               <label style={labelStyle}>참가자 구분 (Category)</label>
-              <select 
-                value={type} 
-                onChange={(e) => setType(e.target.value)}
-                style={inputStyle}
-              >
-                <option value="Participant">Participant (일반)</option>
-                <option value="Organizer">Organizer (주최자)</option>
-                <option value="VIP">VIP</option>
-                <option value="Speaker">Speaker (연사)</option>
-                <option value="Staff">Staff (스태프)</option>
-                <option value="Press">Press (기자)</option>
-              </select>
+              <div style={{
+                ...inputStyle,
+                backgroundColor: 'rgba(255,255,255,0.05)',
+                color: 'var(--accent)',
+                fontWeight: '700',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'not-allowed'
+              }}>
+                <span>Attendee (일반 참가자)</span>
+                <span style={{ fontSize: '0.7rem', backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#34d399', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                  셀프 등록 전용
+                </span>
+              </div>
             </div>
 
             {/* 1. 이름 */}

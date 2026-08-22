@@ -33,7 +33,7 @@ export const AttendeeList: React.FC<AttendeeListProps> = ({ onPrintTrigger }) =>
       // 10열 헤더: 국적,구분,영문이름,국문이름,영문직급,국문직급,영문소속,국문소속,연락처,이메일
       if (parts.length >= 8) {
         const nationalityVal = (parts[0] === 'Foreign' || parts[0] === '외국인') ? 'Foreign' : 'Domestic';
-        const typeVal = parts[1] || 'Participant';
+        const typeVal = parts[1] || 'Attendee';
         const nameEnVal = parts[2] || '';
         const nameKrVal = parts[3] || '';
         const posEnVal = parts[4] || '';
@@ -75,7 +75,7 @@ export const AttendeeList: React.FC<AttendeeListProps> = ({ onPrintTrigger }) =>
       } else if (parts.length >= 4) {
         result.push({
           nationality: 'Domestic',
-          type: parts[0] || 'Participant',
+          type: parts[0] || 'Attendee',
           organization: parts[1] || '소속 미정',
           position: parts[2] || '직책 미정',
           name: parts[3] || '이름 없음',
@@ -149,6 +149,102 @@ export const AttendeeList: React.FC<AttendeeListProps> = ({ onPrintTrigger }) =>
     URL.revokeObjectURL(url);
   };
 
+  const escapeCsvField = (field: string) => {
+    if (!field) return '""';
+    const stringified = String(field);
+    if (stringified.includes(',') || stringified.includes('"') || stringified.includes('\n')) {
+      return `"${stringified.replace(/"/g, '""')}"`;
+    }
+    return `"${stringified}"`;
+  };
+
+  const formatFullDateTime = (isoString?: string) => {
+    if (!isoString) return '-';
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return isoString;
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const seconds = String(d.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  };
+
+  const downloadFullExcel = (isFilteredOnly: boolean = false) => {
+    const dataToExport = isFilteredOnly ? filteredAttendees : attendees;
+    if (dataToExport.length === 0) {
+      alert('내보낼 참가자 데이터가 없습니다.');
+      return;
+    }
+
+    const headers = [
+      '등록코드',
+      '내외국인',
+      '참가자구분',
+      '대표성명',
+      '영문성명',
+      '국문성명',
+      '대표소속',
+      '영문소속',
+      '국문소속',
+      '대표직급',
+      '영문직급',
+      '국문직급',
+      '연락처',
+      '이메일',
+      '등록구분',
+      '참석상태',
+      '발급일시',
+      '총인쇄횟수',
+      '발급데스크',
+      '개인정보동의'
+    ];
+
+    const rows = dataToExport.map(att => {
+      const natStr = att.nationality === 'Foreign' || (!att.nationality && !att.nameKr) ? '외국인' : '내국인';
+      const statusStr = att.isAttended ? '참석(발급완료)' : '미참석(미발급)';
+      const privacyStr = att.privacyAgree ? '동의' : '미동의';
+
+      return [
+        escapeCsvField(att.code),
+        escapeCsvField(natStr),
+        escapeCsvField(att.type),
+        escapeCsvField(att.name || ''),
+        escapeCsvField(att.nameEn || ''),
+        escapeCsvField(att.nameKr || ''),
+        escapeCsvField(att.organization || ''),
+        escapeCsvField(att.organizationEn || ''),
+        escapeCsvField(att.organizationKr || ''),
+        escapeCsvField(att.position || ''),
+        escapeCsvField(att.positionEn || ''),
+        escapeCsvField(att.positionKr || ''),
+        escapeCsvField(att.phone || ''),
+        escapeCsvField(att.email || ''),
+        escapeCsvField(att.registeredType || '사전'),
+        escapeCsvField(statusStr),
+        escapeCsvField(formatFullDateTime(att.attendedAt)),
+        escapeCsvField(att.printedCount?.toString() || '0'),
+        escapeCsvField(att.printedBy || ''),
+        escapeCsvField(privacyStr)
+      ].join(',');
+    });
+
+    const csvContent = '\uFEFF' + headers.join(',') + '\n' + rows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `GDW2026_참가자_발급현황_${isFilteredOnly ? '검색결과' : '전체'}_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const filteredAttendees = attendees.filter(att => {
     const query = searchQuery.toLowerCase();
     const matchesSearch = 
@@ -206,6 +302,10 @@ export const AttendeeList: React.FC<AttendeeListProps> = ({ onPrintTrigger }) =>
         <div className="glass" style={controlPanelStyle}>
           <h3 style={controlTitle}>데이터 관리 설정</h3>
           <div style={buttonGroupStyle}>
+            <button style={btnExcelStyle} onClick={() => downloadFullExcel(false)}>
+              <Download size={16} style={{ marginRight: '6px' }} />
+              전체 현황 엑셀 다운로드 (.csv)
+            </button>
             <button style={btnTemplateStyle} onClick={downloadTemplate}>
               <Download size={16} style={{ marginRight: '6px' }} />
               표준 CSV 템플릿 다운로드
@@ -271,6 +371,18 @@ export const AttendeeList: React.FC<AttendeeListProps> = ({ onPrintTrigger }) =>
       <div className="glass" style={tableContainerStyle}>
         <div style={tableHeaderRow}>
           <h2>참가자 목록 ({filteredAttendees.length}명 / 총 {attendees.length}명)</h2>
+          <div style={{ display: 'flex', gap: '0.6rem' }}>
+            {filteredAttendees.length !== attendees.length && (
+              <button style={btnExcelSubStyle} onClick={() => downloadFullExcel(true)} title="현재 검색 및 필터링된 결과만 엑셀로 다운로드">
+                <Download size={14} style={{ marginRight: '4px' }} />
+                검색결과 다운로드 ({filteredAttendees.length}건)
+              </button>
+            )}
+            <button style={btnExcelHeaderStyle} onClick={() => downloadFullExcel(false)} title="전체 참가자 발급 현황 엑셀 다운로드">
+              <Download size={14} style={{ marginRight: '4px' }} />
+              전체 현황 엑셀 다운로드
+            </button>
+          </div>
         </div>
         <div style={tableWrapper}>
           <table style={tableStyle}>
@@ -445,6 +557,39 @@ const baseBtnStyle: React.CSSProperties = {
   justifyContent: 'center',
 };
 
+const btnExcelStyle: React.CSSProperties = {
+  ...baseBtnStyle,
+  backgroundColor: 'rgba(16, 185, 129, 0.15)',
+  color: '#34d399',
+  border: '1px solid rgba(16, 185, 129, 0.3)',
+};
+
+const btnExcelHeaderStyle: React.CSSProperties = {
+  backgroundColor: 'var(--accent)',
+  color: '#ffffff',
+  padding: '0.4rem 0.8rem',
+  borderRadius: '6px',
+  fontSize: '0.8rem',
+  fontWeight: '600',
+  display: 'inline-flex',
+  alignItems: 'center',
+  cursor: 'pointer',
+  border: 'none',
+};
+
+const btnExcelSubStyle: React.CSSProperties = {
+  backgroundColor: 'rgba(59, 130, 246, 0.15)',
+  color: '#60a5fa',
+  padding: '0.4rem 0.8rem',
+  borderRadius: '6px',
+  fontSize: '0.8rem',
+  fontWeight: '600',
+  display: 'inline-flex',
+  alignItems: 'center',
+  cursor: 'pointer',
+  border: '1px solid rgba(59, 130, 246, 0.3)',
+};
+
 const btnTemplateStyle: React.CSSProperties = {
   ...baseBtnStyle,
   backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -529,6 +674,11 @@ const tableContainerStyle: React.CSSProperties = {
 const tableHeaderRow: React.CSSProperties = {
   padding: '1.2rem 1.5rem',
   borderBottom: '1px solid var(--border)',
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  flexWrap: 'wrap',
+  gap: '1rem',
 };
 
 const tableWrapper: React.CSSProperties = {

@@ -1,7 +1,7 @@
 export interface Attendee {
   id: string;              // 고유 ID
   code: string;            // 등록코드 (QR/바코드 인식용 5~6자리 숫자)
-  type: string;            // 참가자 구분 (Organizer, VIP, Speaker, Participant, Staff, Press 등)
+  type: string;            // 참가자 구분 (Organizer, VIP, Speaker, Attendee, Staff, Press 등)
   nationality?: 'Domestic' | 'Foreign'; // 내국인(Domestic) | 외국인(Foreign)
   name: string;            // 대표/통합 이름
   nameEn?: string;         // 영문이름 (1-1)

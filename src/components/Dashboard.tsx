@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAttendees } from '../context/AttendeeContext';
-import { Users, UserCheck, UserPlus, Printer, Clock, BarChart3, Tag } from 'lucide-react';
+import { Users, UserCheck, UserPlus, Printer, Clock, BarChart3, Tag, Calendar } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const { attendees, printLogs } = useAttendees();
@@ -40,6 +40,54 @@ export const Dashboard: React.FC = () => {
       typeStats[a.type].attended += 1;
     }
   });
+
+  // --- 일자별 발급 현황 집계 (Daily Issuance Breakdown) ---
+  const getDateStr = (isoString?: string) => {
+    if (!isoString) return '';
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return '';
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const dailyMap: { [dateStr: string]: { preCount: number; onsiteCount: number; total: number } } = {};
+
+  printLogs.forEach(log => {
+    const dStr = getDateStr(log.printedAt);
+    if (!dStr) return;
+    if (!dailyMap[dStr]) {
+      dailyMap[dStr] = { preCount: 0, onsiteCount: 0, total: 0 };
+    }
+    if (log.registeredType === '사전') {
+      dailyMap[dStr].preCount += 1;
+    } else {
+      dailyMap[dStr].onsiteCount += 1;
+    }
+    dailyMap[dStr].total += 1;
+  });
+
+  // printLogs가 없을 때 attendees.attendedAt 기반으로 보완
+  if (Object.keys(dailyMap).length === 0) {
+    attendees.filter(a => a.isAttended && a.attendedAt).forEach(a => {
+      const dStr = getDateStr(a.attendedAt);
+      if (!dStr) return;
+      if (!dailyMap[dStr]) {
+        dailyMap[dStr] = { preCount: 0, onsiteCount: 0, total: 0 };
+      }
+      if (a.registeredType === '사전') {
+        dailyMap[dStr].preCount += 1;
+      } else {
+        dailyMap[dStr].onsiteCount += 1;
+      }
+      dailyMap[dStr].total += 1;
+    });
+  }
+
+  const sortedDailyStats = Object.entries(dailyMap)
+    .map(([date, counts]) => ({ date, ...counts }))
+    .sort((a, b) => b.date.localeCompare(a.date));
 
   const formatTime = (isoString: string) => {
     if (!isoString) return '--:--:--';
@@ -180,6 +228,65 @@ export const Dashboard: React.FC = () => {
             )}
           </div>
         </div>
+      </div>
+
+      <div className="glass" style={panelStyle}>
+        <div style={panelHeaderStyle}>
+          <Calendar size={18} style={{ color: 'var(--accent)' }} />
+          <h2 style={panelTitleStyle}>일자별 명찰 발급 현황 (Daily Badge Issuance Status)</h2>
+        </div>
+        {sortedDailyStats.length > 0 ? (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-secondary)' }}>
+                  <th style={{ padding: '0.75rem 1rem' }}>발급 일자</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>사전등록 발급</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>현장등록 발급</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>일일 총 발급</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>발급 점유율</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedDailyStats.map((stat) => {
+                  const maxTotal = Math.max(...sortedDailyStats.map(s => s.total), 1);
+                  const percentage = Math.round((stat.total / (totalAttended || 1)) * 100);
+                  const barPercent = Math.round((stat.total / maxTotal) * 100);
+                  return (
+                    <tr key={stat.date} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                      <td style={{ padding: '0.75rem 1rem', fontWeight: '700', color: 'var(--text-primary)' }}>
+                        📅 {stat.date}
+                      </td>
+                      <td style={{ padding: '0.75rem 1rem', textAlign: 'center', color: '#60a5fa', fontWeight: '600' }}>
+                        {stat.preCount}건
+                      </td>
+                      <td style={{ padding: '0.75rem 1rem', textAlign: 'center', color: '#f87171', fontWeight: '600' }}>
+                        {stat.onsiteCount}건
+                      </td>
+                      <td style={{ padding: '0.75rem 1rem', textAlign: 'center', color: 'var(--accent)', fontWeight: '700' }}>
+                        {stat.total}건
+                      </td>
+                      <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                          <div style={{ width: '80px', height: '8px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '4px', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${barPercent}%`, backgroundColor: 'var(--accent)', borderRadius: '4px' }} />
+                          </div>
+                          <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-secondary)', width: '40px' }}>
+                            {percentage}%
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div style={emptyDataStyle}>
+            현재 일자별 발급 기록이 없습니다. 현장에서 바코드/QR 스캔 및 명찰 출력을 진행하면 날짜별로 통계가 생성됩니다.
+          </div>
+        )}
       </div>
 
       <div className="glass" style={panelStyle}>

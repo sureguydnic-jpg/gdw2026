@@ -44,6 +44,8 @@ interface AttendeeContextType {
   addPreQna: (qna: Omit<PreQna, 'id' | 'createdAt' | 'isReviewed'>) => PreQna;
   addPreSurvey: (survey: Omit<PreSurvey, 'id' | 'createdAt'>) => PreSurvey;
   toggleQnaReviewed: (id: string) => void;
+  isTestMode: boolean;
+  toggleTestMode: () => void;
   clearPortalData: () => void;
 }
 
@@ -133,7 +135,7 @@ const INITIAL_ATTENDEES: Attendee[] = [
     id: '00000000-0000-0000-0000-000000000005',
     code: '10005',
     nationality: 'Domestic',
-    type: 'Participant',
+    type: 'Attendee',
     name: 'Kyunghee Park (박경희)',
     nameEn: 'Kyunghee Park',
     nameKr: '박경희',
@@ -338,6 +340,20 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // 로그인 상태 추가
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [userRole, setUserRole] = useState<'admin' | 'desk' | null>(null);
+
+  // 테스트 모드 (Test/Sandbox Mode) 상태 추가
+  const [isTestMode, setIsTestModeState] = useState<boolean>(() => {
+    return localStorage.getItem('mice_test_mode') === 'true';
+  });
+
+  const toggleTestMode = () => {
+    setIsTestModeState(prev => {
+      const next = !prev;
+      localStorage.setItem('mice_test_mode', String(next));
+      channel.postMessage({ type: 'SYNC_TEST_MODE', isTestMode: next });
+      return next;
+    });
+  };
 
   const channel = React.useMemo(() => new BroadcastChannel('mice_idcard_sync'), []);
   const isPollingRef = React.useRef(false);
@@ -761,6 +777,9 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (event.data === 'SYNC_SETTINGS' || event.data === 'SYNC_DATA') {
         loadSettingsFromLocalStorage();
       }
+      if (typeof event.data === 'object' && event.data?.type === 'SYNC_TEST_MODE') {
+        setIsTestModeState(event.data.isTestMode);
+      }
     };
 
     channel.addEventListener('message', handleSyncMessage);
@@ -768,6 +787,9 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'mice_print_settings') {
         loadSettingsFromLocalStorage();
+      }
+      if (e.key === 'mice_test_mode') {
+        setIsTestModeState(e.newValue === 'true');
       }
     };
     window.addEventListener('storage', handleStorageChange);
@@ -1211,6 +1233,11 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const target = attendees.find(a => a.id === id);
     if (!target) return;
 
+    if (isTestMode) {
+      console.log(`[🧪 Test Mode] 명찰 발급 테스트 실행 (대상: ${target.name}) - DB 및 참석 통계 미반영`);
+      return;
+    }
+
     const updatedAttendee: Attendee = {
       ...target,
       isAttended: true,
@@ -1447,6 +1474,8 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       addPreQna,
       addPreSurvey,
       toggleQnaReviewed,
+      isTestMode,
+      toggleTestMode,
       clearPortalData
     }}>
       {children}

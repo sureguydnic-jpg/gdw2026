@@ -52,7 +52,7 @@ export const SmsSimulator: React.FC = () => {
     preRegistered.forEach(att => {
       const phone = att.phone || '';
       const nat = att.nationality || (att.nameKr ? 'Domestic' : 'Foreign');
-      const catType = att.type || 'Participant';
+      const catType = att.type || 'Attendee';
       const nameEn = att.nameEn || att.name;
       const nameKr = att.nameKr || '';
       const posEn = att.positionEn || att.position || '';

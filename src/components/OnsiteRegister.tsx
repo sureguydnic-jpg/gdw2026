@@ -11,7 +11,7 @@ export const OnsiteRegister: React.FC<OnsiteRegisterProps> = ({ onPrintTrigger }
   const { addAttendee, deskId } = useAttendees();
   
   const [nationality, setNationality] = useState<'Domestic' | 'Foreign'>('Domestic');
-  const [type, setType] = useState('Participant');
+  const [type, setType] = useState('Attendee');
   const [nameEn, setNameEn] = useState('');
   const [nameKr, setNameKr] = useState('');
   const [positionEn, setPositionEn] = useState('');
@@ -137,7 +137,8 @@ export const OnsiteRegister: React.FC<OnsiteRegisterProps> = ({ onPrintTrigger }
               onChange={(e) => setType(e.target.value)}
               style={selectStyle}
             >
-              <option value="Participant">Participant (일반 참가자)</option>
+              <option value="Attendee">Attendee (일반 참가자)</option>
+              <option value="PCO">PCO (운영 대행사/P.C.O)</option>
               <option value="Organizer">Organizer (주최자/기획자)</option>
               <option value="VIP">VIP (주요 인사)</option>
               <option value="Speaker">Speaker (연사)</option>

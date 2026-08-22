@@ -141,6 +141,44 @@ export const IdCardTemplate: React.FC<IdCardTemplateProps> = ({ attendee }) => {
     objectFit: 'contain',
   };
 
+  const topEventHeaderStyle: React.CSSProperties = {
+    fontSize: `${8.5 * scale}pt`,
+    fontWeight: 800,
+    color: '#000000',
+    letterSpacing: `${0.8 * scale}px`,
+    textTransform: 'uppercase',
+    borderBottom: `${1 * scale}px solid #000000`,
+    paddingBottom: `${1 * scale}mm`,
+    marginBottom: `${1.5 * scale}mm`,
+    width: '100%',
+    fontFamily: "'Outfit', 'Pretendard', sans-serif",
+    textAlign: 'center',
+    lineHeight: 1,
+  };
+
+  // 무기명 퀵 발급 명찰 레이아웃 판별 (STAFF, PRESS, GUEST, VIP 전용)
+  const isQuickBadge = attendee.code.startsWith('QUICK-') || attendee.name === attendee.type;
+
+  if (isQuickBadge) {
+    return (
+      <div style={cardStyle}>
+        <div style={topEventHeaderStyle}>GOYANG DESTINATION WEEK 2026</div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+          <div style={{ fontSize: `${38 * scale}pt`, fontWeight: 900, color: '#000000', letterSpacing: `${2 * scale}px`, lineHeight: 1 }}>
+            {attendee.type}
+          </div>
+          <div style={{ fontSize: `${15 * scale}pt`, fontWeight: 800, color: '#111111', marginTop: `${4 * scale}mm` }}>
+            {attendee.nameKr || '공식 패스'}
+          </div>
+        </div>
+        <div style={footerScanContainer}>
+          {qrDataUrl && <img src={qrDataUrl} alt={`QR ${attendee.code}`} style={qrImageStyle} />}
+          <span style={codeTextStyle}>{attendee.code}</span>
+        </div>
+      </div>
+    );
+  }
+
   // ==========================================
   // 🅰️ [외국인 전용 레이아웃 엔진 (Foreign Mode)]
   // ==========================================
@@ -152,7 +190,7 @@ export const IdCardTemplate: React.FC<IdCardTemplateProps> = ({ attendee }) => {
       lineHeight: 1.05,
       letterSpacing: `${-0.5 * scale}px`,
       wordBreak: 'keep-all',
-      marginTop: `${3 * scale}mm`,
+      marginTop: `${1 * scale}mm`,
     };
 
     const foreignPositionStyle: React.CSSProperties = {
@@ -183,6 +221,8 @@ export const IdCardTemplate: React.FC<IdCardTemplateProps> = ({ attendee }) => {
 
     return (
       <div style={cardStyle}>
+        <div style={topEventHeaderStyle}>GOYANG DESTINATION WEEK 2026</div>
+
         {/* 초대형 영문 이름 */}
         <div style={foreignNameStyle}>{nameEn}</div>
 
@@ -266,6 +306,8 @@ export const IdCardTemplate: React.FC<IdCardTemplateProps> = ({ attendee }) => {
 
   return (
     <div style={cardStyle}>
+      <div style={topEventHeaderStyle}>GOYANG DESTINATION WEEK 2026</div>
+
       {/* 1-1. 영문이름 & 1-2. 국문이름 */}
       <div style={domesticNameBlock}>
         <div style={domesticNameEnStyle}>{nameEn}</div>
