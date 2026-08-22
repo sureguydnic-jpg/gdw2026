@@ -388,17 +388,17 @@ export const AttendeeList: React.FC<AttendeeListProps> = ({ onPrintTrigger }) =>
           <table style={tableStyle}>
             <thead>
               <tr style={thRowStyle}>
-                <th style={thStyle}>등록코드</th>
-                <th style={thStyle}>구분</th>
-                <th style={thStyle}>성명</th>
-                <th style={thStyle}>소속</th>
-                <th style={thStyle}>직책</th>
-                <th style={thStyle}>연락처</th>
-                <th style={thStyle}>이메일</th>
-                <th style={thStyle}>등록</th>
-                <th style={thStyle}>발급 일시</th>
-                <th style={{ ...thStyle, textAlign: 'center' }}>발급 횟수</th>
-                <th style={{ ...thStyle, textAlign: 'right' }}>액션</th>
+                <th style={{ ...thStyle, width: '90px', minWidth: '90px' }}>등록코드</th>
+                <th style={{ ...thStyle, width: '90px', minWidth: '90px' }}>구분</th>
+                <th style={{ ...thStyle, minWidth: '160px' }}>성명</th>
+                <th style={{ ...thStyle, minWidth: '180px' }}>소속</th>
+                <th style={{ ...thStyle, minWidth: '130px' }}>직책</th>
+                <th style={{ ...thStyle, minWidth: '120px' }}>연락처</th>
+                <th style={{ ...thStyle, minWidth: '160px' }}>이메일</th>
+                <th style={{ ...thStyle, width: '70px', minWidth: '70px', textAlign: 'center' }}>등록</th>
+                <th style={{ ...thStyle, width: '120px', minWidth: '120px' }}>발급 일시</th>
+                <th style={{ ...thStyle, width: '80px', minWidth: '80px', textAlign: 'center' }}>발급 횟수</th>
+                <th style={{ ...thStyle, width: '110px', minWidth: '110px', textAlign: 'right' }}>액션</th>
               </tr>
             </thead>
             <tbody>
@@ -688,6 +688,7 @@ const tableWrapper: React.CSSProperties = {
 
 const tableStyle: React.CSSProperties = {
   width: '100%',
+  minWidth: '1200px',
   borderCollapse: 'collapse',
   textAlign: 'left',
 };
@@ -698,12 +699,13 @@ const thRowStyle: React.CSSProperties = {
 };
 
 const thStyle: React.CSSProperties = {
-  padding: '1rem 1.5rem',
-  fontSize: '0.8rem',
-  fontWeight: '600',
+  padding: '0.85rem 0.75rem',
+  fontSize: '0.78rem',
+  fontWeight: '700',
   color: 'var(--text-secondary)',
   textTransform: 'uppercase',
   letterSpacing: '0.5px',
+  whiteSpace: 'nowrap',
 };
 
 const trStyle: React.CSSProperties = {
@@ -713,9 +715,10 @@ const trStyle: React.CSSProperties = {
 };
 
 const tdStyle: React.CSSProperties = {
-  padding: '1rem 1.5rem',
-  fontSize: '0.85rem',
+  padding: '0.85rem 0.75rem',
+  fontSize: '0.82rem',
   color: 'var(--text-primary)',
+  whiteSpace: 'nowrap',
 };
 
 const tdCodeStyle: React.CSSProperties = {
@@ -746,9 +749,10 @@ const typeBadgeStyle = (type: string): React.CSSProperties => {
   let bg = 'var(--general-bg)';
   
   if (type === 'VIP') { color = 'var(--vip-color)'; bg = 'var(--vip-bg)'; }
-  else if (type === '연사') { color = 'var(--speaker-color)'; bg = 'var(--speaker-bg)'; }
-  else if (type === '스태프') { color = 'var(--staff-color)'; bg = 'var(--staff-bg)'; }
-  else if (type === '기자') { color = 'var(--press-color)'; bg = 'var(--press-bg)'; }
+  else if (type === 'PCO') { color = '#60a5fa'; bg = 'rgba(59, 130, 246, 0.15)'; }
+  else if (type === '연사' || type === 'Speaker') { color = 'var(--speaker-color)'; bg = 'var(--speaker-bg)'; }
+  else if (type === '스태프' || type === 'Staff') { color = 'var(--staff-color)'; bg = 'var(--staff-bg)'; }
+  else if (type === '기자' || type === 'Press') { color = 'var(--press-color)'; bg = 'var(--press-bg)'; }
 
   return {
     fontSize: '0.75rem',
@@ -757,6 +761,8 @@ const typeBadgeStyle = (type: string): React.CSSProperties => {
     backgroundColor: bg,
     padding: '0.15rem 0.5rem',
     borderRadius: '4px',
+    whiteSpace: 'nowrap',
+    display: 'inline-block',
   };
 };
 
@@ -767,23 +773,27 @@ const regBadgeStyle = (regType: '사전' | '현장'): React.CSSProperties => ({
   fontWeight: '600',
   backgroundColor: regType === '사전' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(248, 113, 113, 0.1)',
   color: regType === '사전' ? '#60a5fa' : '#f87171',
+  whiteSpace: 'nowrap',
+  display: 'inline-block',
 });
 
 const statusAttendedStyle: React.CSSProperties = {
-  display: 'flex',
+  display: 'inline-flex',
   alignItems: 'center',
-  gap: '0.5rem',
+  gap: '0.4rem',
   color: 'var(--accent)',
   fontWeight: '500',
-  fontSize: '0.8rem',
+  fontSize: '0.78rem',
+  whiteSpace: 'nowrap',
 };
 
 const statusAbsentStyle: React.CSSProperties = {
-  display: 'flex',
+  display: 'inline-flex',
   alignItems: 'center',
-  gap: '0.5rem',
+  gap: '0.4rem',
   color: 'var(--text-muted)',
-  fontSize: '0.8rem',
+  fontSize: '0.78rem',
+  whiteSpace: 'nowrap',
 };
 
 const statusDot = (isActive: boolean): React.CSSProperties => ({
@@ -800,17 +810,24 @@ const printCountBadge: React.CSSProperties = {
   padding: '0.1rem 0.4rem',
   borderRadius: '3px',
   fontSize: '0.75rem',
+  whiteSpace: 'nowrap',
 };
 
 const btnPrintRowStyle: React.CSSProperties = {
   backgroundColor: 'var(--accent)',
   color: '#ffffff',
-  padding: '0.4rem 0.8rem',
-  borderRadius: '4px',
-  fontSize: '0.75rem',
-  fontWeight: '600',
+  padding: '0.45rem 0.75rem',
+  borderRadius: '6px',
+  fontSize: '0.78rem',
+  fontWeight: '700',
   display: 'inline-flex',
   alignItems: 'center',
+  justifyContent: 'center',
+  whiteSpace: 'nowrap',
+  border: 'none',
+  cursor: 'pointer',
+  gap: '0.3rem',
+  flexShrink: 0,
 };
 
 const emptyCellstyle: React.CSSProperties = {
