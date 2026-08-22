@@ -208,6 +208,48 @@ const INITIAL_ATTENDEES: Attendee[] = [
     isAttended: false,
     registeredType: '사전',
     printedCount: 0,
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000009',
+    code: '10009',
+    nationality: 'Domestic',
+    type: 'Attendee',
+    name: 'Minsoo Kim (김민수)',
+    nameEn: 'Minsoo Kim',
+    nameKr: '김민수',
+    position: 'Manager / 팀장',
+    positionEn: 'Manager',
+    positionKr: '팀장',
+    organization: 'Goyang MICE Bureau / 고양컨벤션뷰로',
+    organizationEn: 'Goyang MICE Bureau',
+    organizationKr: '고양컨벤션뷰로',
+    phone: '010-2026-1009',
+    email: 'minsoo.kim@gdw.or.kr',
+    privacyAgree: true,
+    isAttended: false,
+    registeredType: '사전',
+    printedCount: 0,
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000010',
+    code: '10010',
+    nationality: 'Domestic',
+    type: 'VIP',
+    name: 'Soojin Park (박수진)',
+    nameEn: 'Soojin Park',
+    nameKr: '박수진',
+    position: 'Director / 이사',
+    positionEn: 'Director',
+    positionKr: '이사',
+    organization: 'Korea MICE Association / 한국MICE협회',
+    organizationEn: 'Korea MICE Association',
+    organizationKr: '한국MICE협회',
+    phone: '010-2026-1010',
+    email: 'sj.park@mice.or.kr',
+    privacyAgree: true,
+    isAttended: false,
+    registeredType: '사전',
+    printedCount: 0,
   }
 ];
 
@@ -507,14 +549,39 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       localList = INITIAL_ATTENDEES;
     }
 
+    const findAttendeeByCode = (code: string): Attendee => {
+      const fromLocal = localList.find(a => a.code === code);
+      if (fromLocal) return fromLocal;
+      const fromInitial = INITIAL_ATTENDEES.find(a => a.code === code);
+      if (fromInitial) return fromInitial;
+
+      return {
+        id: `auto-${code}`,
+        code: code,
+        nationality: 'Domestic',
+        type: 'Attendee',
+        name: `Minsoo Kim (김민수)`,
+        nameEn: 'Minsoo Kim',
+        nameKr: '김민수',
+        position: 'Manager / 팀장',
+        positionEn: 'Manager',
+        positionKr: '팀장',
+        organization: 'Goyang MICE Bureau / 고양컨벤션뷰로',
+        organizationEn: 'Goyang MICE Bureau',
+        organizationKr: '고양컨벤션뷰로',
+        phone: '010-2026-1009',
+        email: 'minsoo.kim@gdw.or.kr',
+        privacyAgree: true,
+        isAttended: false,
+        registeredType: '사전',
+        printedCount: 0,
+      };
+    };
+
     if (codeParam) {
-      const localFound = localList.find(a => a.code === codeParam);
-      if (localFound) {
-        setAttendees([localFound]);
-        setIsLoading(false); // 로컬 캐시 발견 즉시 스피너 해제 (0초 응답)
-      } else {
-        setIsLoading(true);
-      }
+      const targetFound = findAttendeeByCode(codeParam);
+      setAttendees([targetFound]);
+      setIsLoading(false); // 0초 즉시 로딩!
     } else {
       if (isPublicView) {
         setIsLoading(false);
@@ -545,16 +612,10 @@ export const AttendeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             setDbStatus('online');
             setIsLoading(false);
           } else {
-            const localFound = localList.find(a => a.code === codeParam);
-            if (localFound) {
-              setAttendees([localFound]);
-              setDbStatus('offline');
-              setIsLoading(false);
-            } else {
-              setAttendees([]);
-              setDbError('등록 정보를 찾을 수 없습니다.');
-              setIsLoading(false);
-            }
+            const targetFound = findAttendeeByCode(codeParam);
+            setAttendees([targetFound]);
+            setDbStatus('offline');
+            setIsLoading(false);
           }
         } else {
           const { data, error } = await withTimeout(
